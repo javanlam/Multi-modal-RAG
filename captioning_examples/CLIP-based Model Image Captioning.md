@@ -21,10 +21,10 @@ Utilizes the implementation and pre-trained model from:
 
 | Use Case | Document |
 | --- | --- |
-| Specific figures (mathematics) | [5.1_ Approximating Areas - Mathematics LibreTexts.pdf](clip_results/5%201_%20Approximating%20Areas%20-%20Mathematics%20LibreTexts%20%202b6548de34b481648af6e261a9ee7fe0.md) |
-| Concept Images (depicts software features) | [Apple Intelligence features are now available in traditional Chinese - Apple (HK).pdf](clip_results/Apple%20Intelligence%20features%20are%20now%20available%20in%20t%202b6548de34b481638d84f670b8d0c8af.md) |
-| Informational Images | [Transport Arrangement for Fall Term _ Campus Services Office.pdf](clip_results/Transport%20Arrangement%20for%20Fall%20Term%20_%20Campus%20Servi%202b6548de34b48173b9dddfcf71968bad.md) |
-| Advanced concepts with context from text only | [Underwater SLAM for Marine Robot Navigation _ HKUST CSE.pdf](clip_results/Underwater%20SLAM%20for%20Marine%20Robot%20Navigation%20_%20HKUS%202b6548de34b48167ac00dfb8a29b79c9.md) |
+| Specific figures (mathematics) | [5.1_ Approximating Areas - Mathematics LibreTexts.pdf](clip_results/5%201_%20Approximating%20Areas%20-%20Mathematics%20LibreTexts%20%2a4548de34b48040a7c6e314d723088d.md) |
+| Concept Images (depicts software features) | [Apple Intelligence features are now available in traditional Chinese - Apple (HK).pdf](clip_results/Apple%20Intelligence%20features%20are%20now%20available%20in%20t%2b6548de34b481638d84f670b8d0c8af.md) |
+| Informational Images | [Transport Arrangement for Fall Term _ Campus Services Office.pdf](clip_results/Transport%20Arrangement%20for%20Fall%20Term%20_%20Campus%20Servi%2b6548de34b48173b9dddfcf71968bad.md) |
+| Advanced concepts with context from text only | [Underwater SLAM for Marine Robot Navigation _ HKUST CSE.pdf](clip_results/Underwater%20SLAM%20for%20Marine%20Robot%20Navigation%20_%20HKUS%2b6548de34b48167ac00dfb8a29b79c9.md) |
 
 
 ## Statistics on time used for each image:
