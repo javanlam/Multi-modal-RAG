@@ -5,10 +5,19 @@ from typing import List, Union, Tuple
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from config.settings import RAGConfig
 
+
 class DocumentProcessor:
-    """Handles document loading and text chunking with multi-format support"""
+    """
+    Handles document loading and text chunking with multi-format support.
+    """
     
     def __init__(self, config: RAGConfig):
+        """
+        Initializes an instance of the document processor class with configurations provided.
+
+        args:
+        - config (RAGConfig): an instance of the data class for configuration settings
+        """
         self.config = config
         self.text_splitter = RecursiveCharacterTextSplitter(
             chunk_size=config.chunk_size,
@@ -16,8 +25,17 @@ class DocumentProcessor:
             separators=["\n\n", "\n", ". ", " ", ""]
         )
     
+
     def load_document(self, file_path: str) -> str:
-        """Load text from various document formats"""
+        """
+        Loads text from document at provided path.
+
+        args:
+        - file_path (str): path of document to load
+
+        returns:
+        - text extracted from the document; OR an error message
+        """
         ext = os.path.splitext(file_path)[1].lower()
         
         if ext == '.pdf':
@@ -29,8 +47,17 @@ class DocumentProcessor:
         else:
             raise ValueError(f"Unsupported file format: {ext}")
     
+
     def _load_pdf(self, file_path: str) -> str:
-        """Extract text from PDF files"""
+        """
+        Extracts text from PDF files.
+        
+        args:
+        - file_path (str): path of document to load
+
+        returns:
+        - text extracted from the document; OR an error message
+        """
         text = ""
         with open(file_path, 'rb') as file:
             reader = PyPDF2.PdfReader(file)
@@ -38,18 +65,46 @@ class DocumentProcessor:
                 text += page.extract_text() + "\n"
         return text
     
+
     def _load_docx(self, file_path: str) -> str:
-        """Extract text from Word documents"""
+        """
+        Extracts text from Word documents.
+
+        args:
+        - file_path (str): path of document to load
+
+        returns:
+        - text extracted from the document; OR an error message
+        """
         doc = docx.Document(file_path)
         return "\n".join([paragraph.text for paragraph in doc.paragraphs])
     
+
     def _load_txt(self, file_path: str) -> str:
-        """Load text from plain text files"""
+        """
+        Loads text from plain text files.
+        
+        args:
+        - file_path (str): path of document to load
+
+        returns:
+        - text extracted from the document; OR an error message
+        """
         with open(file_path, 'r', encoding='utf-8') as file:
             return file.read()
     
+
     def chunk_text(self, text: str, source_file: str = None) -> Tuple[List[str], List[dict]]:
-        """Split text into chunks"""
+        """
+        Splits text into chunks for easier processing.
+        
+        args:
+        - text (str): the text to perform chunking on
+        - source_file (str): path to source file of the text
+
+        returns:
+        - a tuple containing a list of chunked text pieces, and a list of dictionaries containing chunk metadata
+        """
         chunks = self.text_splitter.split_text(text)
 
         metadatas = []
@@ -64,8 +119,17 @@ class DocumentProcessor:
 
         return chunks, metadatas
     
+
     def process_directory(self, directory_path: str) -> Tuple[List[str], List[dict]]:
-        """Process all supported documents in a directory"""
+        """
+        Processes all supported documents in a directory.
+        
+        args:
+        - directory_path (str): path of directory to process
+
+        returns:
+        - a tuple containing a list of chunked text pieces, and a list of dictionaries containing chunk metadata
+        """
         all_chunks = []
         all_metadatas = []
         supported_extensions = {'.pdf', '.docx', '.txt'}
