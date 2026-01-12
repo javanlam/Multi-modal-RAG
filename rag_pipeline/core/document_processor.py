@@ -24,7 +24,6 @@ class DocumentProcessor:
             chunk_overlap=config.chunk_overlap,
             separators=["\n\n", "\n", ". ", " ", ""]
         )
-    
 
     def load_document(self, file_path: str) -> str:
         """
@@ -46,7 +45,6 @@ class DocumentProcessor:
             return self._load_txt(file_path)
         else:
             raise ValueError(f"Unsupported file format: {ext}")
-    
 
     def _load_pdf(self, file_path: str) -> str:
         """
@@ -64,7 +62,6 @@ class DocumentProcessor:
             for page in reader.pages:
                 text += page.extract_text() + "\n"
         return text
-    
 
     def _load_docx(self, file_path: str) -> str:
         """
@@ -78,7 +75,6 @@ class DocumentProcessor:
         """
         doc = docx.Document(file_path)
         return "\n".join([paragraph.text for paragraph in doc.paragraphs])
-    
 
     def _load_txt(self, file_path: str) -> str:
         """
@@ -91,8 +87,7 @@ class DocumentProcessor:
         - text extracted from the document; OR an error message
         """
         with open(file_path, 'r', encoding='utf-8') as file:
-            return file.read()
-    
+            return file.read()    
 
     def chunk_text(self, text: str, source_file: str = None) -> Tuple[List[str], List[dict]]:
         """
@@ -118,7 +113,6 @@ class DocumentProcessor:
             metadatas.append(metadata)
 
         return chunks, metadatas
-    
 
     def process_directory(self, directory_path: str) -> Tuple[List[str], List[dict]]:
         """

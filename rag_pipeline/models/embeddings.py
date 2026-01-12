@@ -18,7 +18,6 @@ class EmbeddingModel:
         """
         self.model = SentenceTransformer(config.embedding_model)
         self.dimension = config.embedding_dimension
-    
 
     def encode(self, texts: List[str]) -> List[List[float]]:
         """
@@ -31,7 +30,6 @@ class EmbeddingModel:
         - a list of vector embeddings corresponding to each text item
         """
         return self.model.encode(texts).tolist()
-    
 
     def encode_single(self, text: str) -> List[float]:
         """

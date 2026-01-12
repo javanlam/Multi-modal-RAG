@@ -20,7 +20,6 @@ class ResponseGenerator:
         """
         self.config = config
         self._setup_llm()
-    
 
     def _setup_llm(self) -> None:
         """
@@ -40,7 +39,6 @@ class ResponseGenerator:
                 azure_endpoint = "https://hkust.azure-api.net",
                 azure_deployment = self.config.llm_model
             )
-    
     
     def generate_response(self, query: str, context_documents: List[str]) -> Dict[str, Any]:
         """
@@ -62,7 +60,6 @@ class ResponseGenerator:
         
         else:
             return self._generate_fallback_response(query, context)
-    
 
     def _build_prompt(self, query: str, context: str) -> str:
         """
@@ -75,7 +72,7 @@ class ResponseGenerator:
         returns:
         - a string containing the prompt to the LLM.
         """
-        return f"""Based on the following context, please answer the question. If the context doesn't contain relevant information, state that clearly.
+        prompt = f"""Based on the following context, please answer the question. If the context doesn't contain relevant information, state that clearly.
 
 Context:
 {context}
@@ -85,7 +82,8 @@ Question: {query}
 Please provide a comprehensive answer based solely on the context provided. If the context is insufficient, explain what information is missing.
 
 Answer:"""
-    
+        
+        return prompt
 
     def generate_openai_response(self, prompt: str, query: str) -> Dict[str, Any]:
         """
@@ -132,8 +130,7 @@ Answer:"""
             return {
                 "answer": f"Error generating response: {str(e)}",
                 "error": True
-            }
-    
+            } 
 
     def _generate_fallback_response(self, query: str, context: str) -> Dict[str, Any]:
         """

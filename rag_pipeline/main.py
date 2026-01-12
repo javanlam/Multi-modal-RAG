@@ -27,7 +27,6 @@ class RAGSystem:
         self.generator = ResponseGenerator(self.config)
         self.embedding = EmbeddingModel(self.config)
     
-    
     def ingest_documents(self, source_path: str):
         """
         Ingests documents from a file or directory.
@@ -45,7 +44,6 @@ class RAGSystem:
         
         self.vector_store.add_documents(chunks, embeddings, metadatas)
         print(f"Ingested {len(chunks)} document chunks")
-    
 
     def query(self, question: str, use_enhancement: bool = True) -> Dict:
         """

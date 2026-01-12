@@ -24,7 +24,6 @@ class HyDERetriever:
         self.config = config
         self.embedding_model = EmbeddingModel(config)
 
-
     def enhance_query(self, query: str) -> str:
         """
         Enhances user query using the HyDE technique.
@@ -49,13 +48,15 @@ Hypothetical Document:
 
             enhanced_prompt = enhanced_prompt_output.get("answer", query)
 
+            if "Error generating response" in enhanced_prompt:
+                enhanced_prompt = query
+
             return enhanced_prompt
                 
         except Exception as e:
             # catch error in using an LLM to generate enhanced prompt; use rule-based fallback option
             return self._simple_query_expansion(query)
     
-
     def _simple_query_expansion(self, query: str) -> str:
         """
         Expands user query, acts as a fallback option when the HyDE technique fails.
@@ -78,7 +79,6 @@ Hypothetical Document:
         
         return f"{query} Provide comprehensive information."
     
-
     def retrieve(self, query: str, use_enhancement: bool = True) -> Dict[str, Any]:
         """
         Retrieves relevant documents with optional query enhancement.

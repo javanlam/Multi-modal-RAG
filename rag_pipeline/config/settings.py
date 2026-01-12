@@ -1,6 +1,6 @@
 import os
 from dataclasses import dataclass
-from typing import Dict, Any
+from typing import Self
 
 @dataclass
 class RAGConfig:
@@ -8,6 +8,7 @@ class RAGConfig:
     Configuration settings for the RAG setup.
     
     Defines:
+    - retrieval mode to use ("vector" for vector embedding, or "graph" for graph storage)
     - text embedding model (pretrained embedding model from SentenceTransformers)
     - text embedding vector dimension
     - chunk length for each chunk of document text
@@ -18,7 +19,10 @@ class RAGConfig:
     - name of vector database collection
     - LLM provider, model, and parameters
     """
-    
+
+    retrieval_mode: str = "vector"
+
+    # for vector embedding mode
     embedding_model: str = "all-MiniLM-L6-v2"
     embedding_dimension: int = 384
     
@@ -35,13 +39,20 @@ class RAGConfig:
     llm_model: str = "gpt-4o-mini"
     temperature: float = 0.1
     
+    # for graph storage mode
+    graph_persist_directory: str = "./graph_db"
+    min_community_size: int = 3
+    community_summary_length: int = 200
+    entity_extraction_temperature: float = 0.1
+
     @classmethod
-    def from_env(cls):
+    def from_env(cls) -> Self:
         """
         Create a config class instance from environment variables.
         Parameters may be stored in .env.
         """
         return cls(
+            retrieval_mode=os.getenv("RETRIEVAL_MODE", "vector"),
             embedding_model=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
             embedding_dimension=int(os.getenv("EMBEDDING_DIMENSION", "384")),
             chunk_size=int(os.getenv("CHUNK_SIZE", "1000")),
@@ -52,5 +63,9 @@ class RAGConfig:
             collection_name=os.getenv("COLLECTION_NAME", "documents"),
             llm_provider=os.getenv("LLM_PROVIDER", "openai-azure"),
             llm_model=os.getenv("LLM_MODEL", "gpt-4o-mini"),
-            temperature=float(os.getenv("TEMPERATURE", "0.1"))
+            temperature=float(os.getenv("TEMPERATURE", "0.1")),
+            graph_persist_directory=os.getenv("GRAPH_PERSIST_DIRECTORY", "./graph_db"),
+            min_community_size=int(os.getenv("MIN_COMMUNITY_SIZE", "3")),
+            community_summary_length=int(os.getenv("COMMUNITY_SUMMARY_LENGTH", "200")),
+            entity_extraction_temperature=float(os.getenv("ENTITY_EXTRACTION_TEMPERATURE", "0.1"))
         )

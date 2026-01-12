@@ -18,7 +18,6 @@ class VectorStoreManager:
         self.config = config
         self.client = chromadb.PersistentClient(path=config.persist_directory)
         self.collection = self._get_or_create_collection()
-    
 
     def _get_or_create_collection(self) -> chromadb.Collection:
         """
@@ -28,8 +27,7 @@ class VectorStoreManager:
         - a ChromaDB Collection instance
         """
         collection_name = getattr(self.config, 'collection_name', 'documents')
-        return self.client.get_or_create_collection(name=collection_name)
-    
+        return self.client.get_or_create_collection(name=collection_name) 
 
     def add_documents(
             self, 
@@ -65,7 +63,6 @@ class VectorStoreManager:
             metadatas=metadatas,
             ids=ids
         )
-    
 
     def search(
             self, 
@@ -97,7 +94,6 @@ class VectorStoreManager:
             n_results=n_results,
             include=include
         )
-    
 
     def get_collection_info(self) -> Dict:
         """
