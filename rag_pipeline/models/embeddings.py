@@ -1,4 +1,4 @@
-from sentence_transformers import SentenceTransformer
+from sentence_transformers import SentenceTransformer, util
 import numpy as np
 from typing import List
 from config.settings import RAGConfig
@@ -42,3 +42,18 @@ class EmbeddingModel:
         - vector embeddings corresponding to the provided text
         """
         return self.model.encode([text])[0].tolist()
+    
+    def embedding_similarity(self, embedding1: List[float], embedding2: List[float]) -> float:
+        """
+        Computes the cosine similarity between two text embeddings.
+
+        args:
+        - embedding1 (List[float]): first text embedding
+        - embedding2 (List[float]): second text embedding
+
+        returns:
+        - the cosine similarity of the two embeddings as a floating point number 
+        """
+        similarity = util.cos_sim(embedding1, embedding2)       # cos_sim() returns a tensor
+
+        return similarity.item()                                # Tensor.item() to the floating point number inside
