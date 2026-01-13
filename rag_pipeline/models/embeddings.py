@@ -56,4 +56,4 @@ class EmbeddingModel:
         """
         similarity = util.cos_sim(embedding1, embedding2)       # cos_sim() returns a tensor
 
-        return similarity.item()                                # Tensor.item() to the floating point number inside
+        return similarity.item()                                # Tensor.item() to get the floating point number inside
