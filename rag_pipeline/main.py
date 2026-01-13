@@ -3,7 +3,9 @@ from typing import Dict
 from config.settings import RAGConfig
 from core.document_processor import DocumentProcessor
 from core.vector_store import VectorStoreManager
+from core.graph_store import GraphStorageManager
 from core.retriever import HyDERetriever
+from core.graph_retriever import GraphRetriever
 from core.generator import ResponseGenerator
 from models.embeddings import EmbeddingModel
 
@@ -22,8 +24,17 @@ class RAGSystem:
         """
         self.config = config or RAGConfig.from_env()
         self.document_processor = DocumentProcessor(self.config)
-        self.vector_store = VectorStoreManager(self.config)
-        self.retriever = HyDERetriever(self.vector_store, self.config)
+
+        if self.config.retrieval_mode == "vector":
+            self.vector_store = VectorStoreManager(self.config)
+            self.retriever = HyDERetriever(self.vector_store, self.config)
+
+        elif self.config.retrieval_mode == "graph":
+            self.graph_store = GraphStorageManager(self.config)
+            self.retriever = GraphRetriever(self.config)
+            if not self.graph_store.load():
+                print("No existing graph found. Will build new graph when documents are ingested.")
+
         self.generator = ResponseGenerator(self.config)
         self.embedding = EmbeddingModel(self.config)
     
@@ -40,10 +51,14 @@ class RAGSystem:
         else:                                   # processes a directory
             chunks, metadatas = self.document_processor.process_directory(source_path)
 
-        embeddings = self.embedding.encode(chunks)
-        
-        self.vector_store.add_documents(chunks, embeddings, metadatas)
-        print(f"Ingested {len(chunks)} document chunks")
+        if self.config.retrieval_mode == "vector":
+            embeddings = self.embedding.encode(chunks)
+            self.vector_store.add_documents(chunks, embeddings, metadatas)
+            print(f"Ingested {len(chunks)} document chunks")
+
+        elif self.config.retrieval_mode == "graph":
+            self.graph_store.add_documents(chunks, metadatas)
+            print(f"Built knowledge graph from {len(chunks)} document chunks")
 
     def query(self, question: str, use_enhancement: bool = True) -> Dict:
         """
@@ -63,7 +78,7 @@ class RAGSystem:
             retrieval_result["documents"]
         )
         
-        return {
+        results = {
             "question": question,
             "answer": generation_result["answer"],
             "source_documents": retrieval_result["documents"],
@@ -74,6 +89,15 @@ class RAGSystem:
             },
             "generation_metadata": generation_result
         }
+
+        if self.config.retrieval_mode == "graph":
+            results["graph_metadata"] = {
+                "question_type": retrieval_result.get("question_type", "unknown"),
+                "communities_used": len(retrieval_result.get("metadata", {}).get("communities", [])),
+                "entities_found": retrieval_result.get("metadata", {}).get("total_entities_found", 0)
+            }
+
+        return results
 
 
 if __name__ == "__main__":
@@ -91,6 +115,11 @@ if __name__ == "__main__":
         
         print(f"\nAnswer: {result['answer']}")
         print(f"\nSources retrieved: {result['retrieval_metadata']['documents_retrieved']}")
-        
+
+        if result['retrieval_mode'] == "graph":
+            if "graph_metadata" in result:
+                print(f"Question type: {result['graph_metadata']['question_type']}")
+                print(f"Communities used: {result['graph_metadata']['communities_used']}")
+
         if result['retrieval_metadata']['enhancement_used']:
             print(f"Enhanced query: {result['retrieval_metadata']['enhanced_query']}")

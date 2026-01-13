@@ -19,31 +19,36 @@ class RAGConfig:
     - name of vector database collection
     - LLM provider, model, and parameters
     """
-
+    # indicates whether to use vector embedding mode or graph storage mode
+    # vector embedding mode: "vector"
+    # graph storage mode: "graph"
     retrieval_mode: str = "vector"
+
+    # preprocessing
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+    
+    # LLM client
+    llm_provider: str = "openai-azure"
+    llm_model: str = "gpt-4o-mini"
+    temperature: float = 0.1
 
     # for vector embedding mode
     embedding_model: str = "all-MiniLM-L6-v2"
     embedding_dimension: int = 384
-    
-    chunk_size: int = 1000
-    chunk_overlap: int = 200
-    
-    top_k: int = 3
-    similarity_threshold: float = 0.7
-    
+        
     persist_directory: str = "./chroma_db"
     collection_name: str = "documents"
-    
-    llm_provider: str = "openai-azure"
-    llm_model: str = "gpt-4o-mini"
-    temperature: float = 0.1
     
     # for graph storage mode
     graph_persist_directory: str = "./graph_db"
     min_community_size: int = 3
     community_summary_length: int = 200
     entity_extraction_temperature: float = 0.1
+
+    # retrieval
+    top_k: int = 3
+    similarity_threshold: float = 0.7
 
     @classmethod
     def from_env(cls) -> Self:
