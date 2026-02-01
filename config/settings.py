@@ -27,7 +27,14 @@ class RAGConfig:
     # preprocessing
     chunk_size: int = 1000
     chunk_overlap: int = 200
-    
+
+    extract_images: bool = True
+    generate_image_captions: bool = True
+    image_storage_dir: str = "./image_store"
+    vlm_model: str = "gpt-4o-mini"
+    max_image_context_length: int = 500
+    image_caption_prompt: str = """Provide a concise, descriptive caption for this image based on the surrounding text context."""
+
     # LLM client
     llm_provider: str = "openai-azure"
     llm_model: str = "gpt-4o-mini"

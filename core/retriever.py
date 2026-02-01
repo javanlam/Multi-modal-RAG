@@ -3,6 +3,7 @@ from typing import List, Dict, Any
 from config.settings import RAGConfig
 from models.embeddings import EmbeddingModel
 from generator import ResponseGenerator
+from vector_store import VectorStoreManager
 
 
 class HyDERetriever:
@@ -12,7 +13,7 @@ class HyDERetriever:
     Details can be found at https://aclanthology.org/2023.acl-long.99.pdf
     """
     
-    def __init__(self, vector_store: chromadb.Collection, config: RAGConfig):
+    def __init__(self, vector_store: VectorStoreManager, config: RAGConfig):
         """
         Initializes an instance of the retriever with configurations provided.
 

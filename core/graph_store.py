@@ -3,7 +3,7 @@ import json
 import pickle
 from community import community_louvain
 import os
-from typing import List, Dict, Any, Tuple
+from typing import List, Dict, Any, Tuple, Optional
 from dataclasses import dataclass
 from config.settings import RAGConfig
 from generator import ResponseGenerator
@@ -49,7 +49,7 @@ class RelationshipEdge:
     relationship: str
     description: str
     weight: int = 1
-    source_chunks: List[int] = None
+    source_chunks: Optional[List[int]] = None
 
 
 class GraphStorageManager:
@@ -106,7 +106,7 @@ class GraphStorageManager:
                 
                 parsed_response = self._parse_extraction_response(response_text=response_output)
 
-                for entity in parsed_response.get("entities, []"):
+                for entity in parsed_response.get("entities", []):
                     entity_id = f"{entity["name"]}_{hash(entity["name"]) % 10000}"      # hash to get key for efficient lookup
 
                     if entity_id not in entities:

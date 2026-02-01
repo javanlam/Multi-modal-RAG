@@ -98,13 +98,15 @@ Answer:"""
         """
         try:
 
+            messages = [
+                {"role": "system", "content": "You are a helpful assistant that provides accurate information based on the given context."},
+                {"role": "user", "content": prompt}
+            ]
+
             if self.llm_client is None:
                 response = openai.chat.completions.create(
                     model=self.config.llm_model,
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that provides accurate information based on the given context."},
-                        {"role": "user", "content": prompt}
-                    ],
+                    messages=messages,
                     temperature=self.config.temperature,
                     max_tokens=1000
                 )
@@ -112,10 +114,7 @@ Answer:"""
             else:
                 response = self.llm_client.chat.completions.create(
                     model=self.config.llm_model,
-                    messages=[
-                        {"role": "system", "content": "You are a helpful assistant that provides accurate information based on the given context."},
-                        {"role": "user", "content": prompt}
-                    ],
+                    messages=messages,
                     temperature=self.config.temperature,
                     max_tokens=1000
                 )
