@@ -18,7 +18,7 @@ class HyDERetriever:
         Initializes an instance of the retriever with configurations provided.
 
         args:
-        - vector_store (chromadb.Collection): a ChromaDB collection that acts as the external knowledge base
+        - vector_store (VectorStoreManager): a VectorStoreManager object that acts as the external knowledge base
         - config (RAGConfig): an instance of the data class for configuration settings
         """
         self.vector_store = vector_store
