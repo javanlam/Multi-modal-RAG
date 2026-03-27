@@ -135,7 +135,7 @@ class ImageStore:
             
         except Exception as e:
             print(f"Error storing image: {str(e)}")
-            return ""
+            return None
     
     def get_image(self, image_id: str) -> Optional[Dict]:
         """

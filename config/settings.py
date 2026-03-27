@@ -30,7 +30,7 @@ class RAGConfig:
 
     extract_images: bool = True
     generate_image_captions: bool = True
-    image_storage_dir: str = "./image_store"
+    image_store_dir: str = "./image_store"
     vlm_model: str = "gpt-4o-mini"
     max_image_context_length: int = 500
     image_caption_prompt: str = """Provide a concise, descriptive caption for this image based on the surrounding text context."""
@@ -43,6 +43,15 @@ class RAGConfig:
     # for vector embedding mode
     embedding_model: str = "all-MiniLM-L6-v2"
     embedding_dimension: int = 384
+
+    # for multimodal models
+    use_multimodal: bool = False
+    dinov2_model_name: str = "facebook/dinov2-base"
+    dinov2_embedding_dim: int = 768
+    clip_model_id: str = "ViT-B/16"
+    talk2dino_model_id: str = "lorebianchi98/Talk2DINO-ViTB"
+    multimodal_image_size: int = 448
+    multimodal_batch_size: int = 32
         
     persist_directory: str = "./chroma_db"
     collection_name: str = "documents"
@@ -65,19 +74,39 @@ class RAGConfig:
         """
         return cls(
             retrieval_mode=os.getenv("RETRIEVAL_MODE", "vector"),
-            embedding_model=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
-            embedding_dimension=int(os.getenv("EMBEDDING_DIMENSION", "384")),
+
             chunk_size=int(os.getenv("CHUNK_SIZE", "1000")),
             chunk_overlap=int(os.getenv("CHUNK_OVERLAP", "200")),
-            top_k=int(os.getenv("TOP_K", "3")),
-            similarity_threshold=float(os.getenv("SIMILARITY_THRESHOLD", "0.7")),
-            persist_directory=os.getenv("PERSIST_DIRECTORY", "./chroma_db"),
-            collection_name=os.getenv("COLLECTION_NAME", "documents"),
+
+            extract_images=os.getenv("EXTRACT_IMAGES", "true").lower() == "true",
+            generate_image_captions=os.getenv("GENERATE_IMAGE_CAPTIONS", "true").lower() == "true",
+            image_store_dir=os.getenv("IMAGE_STORE_DIR", "./image_store"),
+            vlm_model=os.getenv("VLM_MODEL", "gpt-4o-mini"),
+            max_image_context_length=os.getenv("MAX_IMAGE_CONTEXT_LENGTH", "500"),
+            image_caption_prompt=os.getenv("IMAGE_CAPTION_PROMPT", """Provide a concise, descriptive caption for this image based on the surrounding text context."""),
+
             llm_provider=os.getenv("LLM_PROVIDER", "openai-azure"),
             llm_model=os.getenv("LLM_MODEL", "gpt-4o-mini"),
             temperature=float(os.getenv("TEMPERATURE", "0.1")),
+
+            embedding_model=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
+            embedding_dimension=int(os.getenv("EMBEDDING_DIMENSION", "384")),
+
+            use_multimodal=os.getenv("USE_MULTIMODAL", "false").lower() == "true",
+            dinov2_model_name=os.getenv("DINOV2_MODEL_NAME", "facebook/dinov2-small"),
+            dinov2_embedding_dim=os.getenv("DINOV2_EMBEDDING_DIM", "768"),
+            talk2dino_model_id=os.getenv("TALK2DINO_MODEL_ID", "lorebianchi98/Talk2DINO-ViTB"),
+            multimodal_image_size=int(os.getenv("MULTIMODAL_IMAGE_SIZE", "448")),
+            multimodal_batch_size=int(os.getenv("MULTIMODAL_BATCH_SIZE", "32")),
+
+            persist_directory=os.getenv("PERSIST_DIRECTORY", "./chroma_db"),
+            collection_name=os.getenv("COLLECTION_NAME", "documents"),
+
             graph_persist_directory=os.getenv("GRAPH_PERSIST_DIRECTORY", "./graph_db"),
             min_community_size=int(os.getenv("MIN_COMMUNITY_SIZE", "3")),
             community_summary_length=int(os.getenv("COMMUNITY_SUMMARY_LENGTH", "200")),
-            entity_extraction_temperature=float(os.getenv("ENTITY_EXTRACTION_TEMPERATURE", "0.1"))
+            entity_extraction_temperature=float(os.getenv("ENTITY_EXTRACTION_TEMPERATURE", "0.1")),
+
+            top_k=int(os.getenv("TOP_K", "3")),
+            similarity_threshold=float(os.getenv("SIMILARITY_THRESHOLD", "0.7")),
         )

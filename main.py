@@ -1,6 +1,6 @@
 import os
 import base64
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 from config.settings import RAGConfig
 from core.document_processor import DocumentProcessor
 from core.vector_store import VectorStoreManager
@@ -11,7 +11,7 @@ from core.generator import ResponseGenerator
 from core.generator_vlm import ResponseGeneratorVLM
 from core.image_store import ImageStore
 from models.embeddings import EmbeddingModel
-
+from models.multimodal_embeddings import MultimodalEmbeddingModel
 
 class RAGSystem:
     """
@@ -26,15 +26,24 @@ class RAGSystem:
         - config (RAGConfig): an instance of the data class for configuration settings
         """
         self.config = config or RAGConfig.from_env()
-        self.vlm_generator = ResponseGeneratorVLM(self.config) if self.config.extract_images and self.config.generate_image_captions else None
 
+        self.vlm_generator = ResponseGeneratorVLM(self.config) if config.generate_image_captions else None
         self.document_processor = DocumentProcessor(self.config, self.vlm_generator)
 
         if self.config.extract_images:
-            self.image_store = ImageStore(self.config.image_storage_dir)
-            print(f"Image store initialized at: {self.config.image_storage_dir}")
+            self.image_store = ImageStore(self.config.image_store_dir)
+            print(f"Image store initialized at: {self.config.image_store_dir}")
         else:
             self.image_store = None
+
+        self.multimodal_embedding = None
+        if self.config.use_multimodal:
+            try:
+                self.multimodal_embedding = MultimodalEmbeddingModel(self.config)
+                print("Multi‑modal embedding model (DINOv2+Talk2DINO) loaded.")
+            except Exception as e:
+                print(f"Failed to load multi‑modal embedding model: {e}")
+                self.config.use_multimodal = False      # prevent errors
 
         if self.config.retrieval_mode == "vector":
             self.vector_store = VectorStoreManager(self.config)
@@ -48,8 +57,6 @@ class RAGSystem:
 
         self.generator = ResponseGenerator(self.config)
         self.embedding = EmbeddingModel(self.config)
-
-        self.vlm_generator = ResponseGeneratorVLM(config) if config.generate_image_captions else None
     
     def ingest_documents(self, source_path: str):
         """
@@ -67,12 +74,18 @@ class RAGSystem:
             text_with_captions = self.document_processor.insert_image_captions(text, images_metadata)
             
             # store extracted images 
+            stored_image_ids = []
             if self.image_store and images_metadata:
                 for img_meta in images_metadata:
-                    self.image_store.store_image(
+                    stored_id = self.image_store.store_image(
                         img_meta.get("image_data_url", ""), 
                         img_meta
                     )
+
+                    if stored_id:
+                        stored_image_ids.append(stored_id)
+                        # update metadata with image_id
+                        img_meta["image_id"] = stored_id
 
                 print(f"Stored {len(images_metadata)} images from {os.path.basename(source_path)}")
 
@@ -102,22 +115,91 @@ class RAGSystem:
             if chunks_with_images > 0:
                 print(f"Found {chunks_with_images} chunks containing images")
 
-    def query(self, question: str, use_enhancement: bool = True, use_vlm: bool = False) -> Dict:
+        if self.config.use_multimodal and self.multimodal_embedding and self.image_store and images_metadata:
+            print("Computing DINO embeddings for extracted images...")
+
+            image_ids = []
+            image_embeddings = []
+            image_metadatas = []
+
+            for img_meta in images_metadata:
+                image_id = img_meta.get("image_id")
+
+                if not image_id:
+                    continue
+                # get the stored image data URL from ImageStore (or from metadata)
+                data_url = self.image_store.get_image_data_url(image_id)
+
+                if not data_url:
+                    continue
+                
+                try:
+                    emb = self.multimodal_embedding.encode_image(data_url)
+                    image_ids.append(image_id)
+                    image_embeddings.append(emb)
+                    image_metadatas.append({
+                        "image_id": image_id,
+                        "caption": img_meta.get("caption", ""),
+                        "source_file": img_meta.get("source_file", "unknown"),
+                        "page_num": img_meta.get("page_num", 0),
+                        "has_caption": img_meta.get("has_caption", False)
+                    })
+                except Exception as e:
+                    print(f"Error computing embedding for image {image_id}: {e}")
+
+            if image_ids:
+                self.vector_store.add_image_embeddings(image_ids, image_embeddings, image_metadatas)
+                print(f"Added {len(image_ids)} image embeddings to vector store.")
+
+    def query(
+            self, 
+            question: str,
+            query_images: Optional[List[str]] = None, 
+            use_enhancement: bool = True, 
+            use_vlm: bool = False
+        ) -> Dict:
         """
         Processes a query and returns the generated response.
 
         args:
         - question (str): user query to retrieve documents for
+        - query_images (Optional[List[str]]): list of data URLs of images included in the user's query
         - use_enhancement (bool): whether to enhance user prompt
         - use_vlm (bool): whether to use VLM for generation (for when images are involved)
 
         returns:
         - a dictionary containing the question, the generated answer, source documents, and additional information
         """
+        # text retrieval
         retrieval_result = self.retriever.retrieve(question, use_enhancement)
 
+        # multimodal retrieval
         retrieved_image_ids = []
+        retrieved_image_data_urls = []
         retrieved_has_images = False
+
+        if self.config.use_multimodal and self.multimodal_embedding and self.vector_store and hasattr(self.vector_store, 'image_collection') and self.vector_store.image_collection:
+            try:
+                # query embedding
+                query_emb = self.multimodal_embedding.encode_query(
+                    text=question, 
+                    image_data_url=query_images[0] if query_images else None
+                )
+
+                # search images by embedding similarity
+                image_results = self.vector_store.search_images(query_emb, n_results=self.config.top_k)
+
+                if image_results and image_results.get('ids') and image_results['ids'][0]:
+                    retrieved_image_ids = image_results['ids'][0]
+                    
+                    # retrieve image URLs from image store
+                    retrieved_image_data_urls = self.get_image_data_urls(retrieved_image_ids)
+                    retrieved_has_images = len(retrieved_image_data_urls) > 0
+
+                    print(f"Retrieved {len(retrieved_image_data_urls)} images via multi‑modal search")
+
+            except Exception as e:
+                print(f"Multi‑modal retrieval error: {e}")
 
         for doc in retrieval_result["documents"]:
             if hasattr(doc, 'metadata'):
@@ -130,17 +212,26 @@ class RAGSystem:
             if metadata.get("has_images", False):
                 retrieved_has_images = True
                 image_ids = metadata.get("image_ids", [])
-                retrieved_image_ids.extend(image_ids)
 
-        context_images = []
-        if self.image_store and retrieved_has_images and retrieved_image_ids and use_vlm:
-            context_images = self.get_image_data_urls(retrieved_image_ids)
-            print(f"Retrieved {len(context_images)} images for context")
+                if image_ids and self.image_store:
+                    # get data URLs for images from store
+                    chunk_image_urls = self.get_image_data_urls(image_ids)
+                    retrieved_image_data_urls.extend(chunk_image_urls)
 
-        if use_vlm and self.vlm_generator and (retrieved_has_images or context_images):
+        # context_images = []
+        # if self.image_store and retrieved_has_images and retrieved_image_ids and use_vlm:
+        #     context_images = self.get_image_data_urls(retrieved_image_ids)
+        #     print(f"Retrieved {len(context_images)} images for context")
+
+        context_images = retrieved_image_data_urls
+        if context_images:
+            print(f"Using {len(context_images)} images as context")
+
+        if use_vlm and self.vlm_generator and (retrieved_has_images or context_images or query_images):
             generation_result = self.vlm_generator.generate_response(
                 question, 
                 retrieval_result["documents"],
+                query_img=query_images,
                 context_images=context_images if context_images else None
             )
             generator_type = "vlm"
@@ -162,7 +253,8 @@ class RAGSystem:
                 "enhancement_used": use_enhancement,
                 "enhanced_query": retrieval_result.get("enhanced_query", question),
                 "has_images_in_retrieved": retrieved_has_images,
-                "images_retrieved": len(context_images)
+                "images_retrieved": len(context_images),
+                "query_images_provided": len(query_images) if query_images else 0
             },
             "generation_metadata": {
                 **generation_result,
@@ -274,7 +366,8 @@ class RAGSystem:
 
 
 if __name__ == "__main__":
-    rag_system = RAGSystem()
+    config = RAGConfig()
+    rag_system = RAGSystem(config=config)
     
     # ingest documents once only when first processing documents
     # rag_system.ingest_documents("./documents/")

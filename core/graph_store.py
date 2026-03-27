@@ -6,7 +6,7 @@ import os
 from typing import List, Dict, Any, Tuple, Optional
 from dataclasses import dataclass
 from config.settings import RAGConfig
-from generator import ResponseGenerator
+from .generator import ResponseGenerator
 from models.embeddings import EmbeddingModel
 
 
@@ -76,7 +76,7 @@ class GraphStorageManager:
         self.chunk_to_entities = {}                         # maps chunk ids to lists of entity ids
         self.persist_path = config.graph_persist_directory
 
-        os.mkdir(path=self.persist_path, exist_ok=True)     # creates directory for graph storage
+        os.makedirs(self.persist_path, exist_ok=True)       # creates directory for graph storage
 
     def extract_entities_and_relationships(self, chunks: List[str], metadatas: List[Dict]) -> Tuple[Dict, List]:
         """
@@ -198,12 +198,16 @@ Response:
         - a Python dict containing entities and relations extracted from the chunked text
         """
         try:
-            start_idx = response_text.find("{")
-            end_idx = response_text.find("}")
+            if "```json" in response_text:
+                # remove potential markdown backticks
+                response_text = response_text.split("```json")[1].split("```")[0]
 
-            if start_idx != -1 and end_idx != 0:
+            start_idx = response_text.find("{")
+            end_idx = response_text.rfind("}")
+
+            if start_idx != -1 and end_idx != -1:
                 # non-empty substring found between quotes
-                json_str = response_text[start_idx:end_idx]
+                json_str = response_text[start_idx:end_idx+1]
                 parsed = json.loads(json_str)
 
                 return parsed
@@ -247,7 +251,8 @@ Response:
                         relation.source,
                         relation.target,
                         weight=relation.weight,
-                        description=relation.description
+                        description=[relation.description],
+                        relationship=relation.relationship
                     )
 
         for node in self.graph.nodes():
@@ -340,11 +345,14 @@ Provide a concise summary that captures the main themes and relationships within
         relationships = []
 
         for u, v, data in subgraph.edges(data=True):
+            description_list = data.get("description", [])
+            description = description_list[0] if description_list else "No description"
+
             relationships.append({
                 "source": self.entities[u].name,
                 "target": self.entities[v].name,
                 "relationship": data.get("relationship", "related"),
-                "description": data.get("descriptions", [])[0]
+                "description": description
             })
 
         information = {

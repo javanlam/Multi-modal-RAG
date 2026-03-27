@@ -18,16 +18,32 @@ class VectorStoreManager:
         self.config = config
         self.client = chromadb.PersistentClient(path=config.persist_directory)
         self.collection = self._get_or_create_collection()
+        self.image_collection = None
 
-    def _get_or_create_collection(self) -> chromadb.Collection:
+        self.collection_name = config.collection_name
+        self.directory = config.persist_directory
+
+        if config.use_multimodal:
+            self.image_collection = self._get_or_create_collection(name=f"{config.collection_name}_images")
+
+    def _get_or_create_collection(self, name: str = None) -> chromadb.Collection:
         """
         Gets an existing collection or creates a new one.
+
+        args:
+        - name (str): name of collection
 
         returns:
         - a ChromaDB Collection instance
         """
         collection_name = getattr(self.config, 'collection_name', 'documents')
-        return self.client.get_or_create_collection(name=collection_name) 
+
+        if name is None:
+            col_name = collection_name
+        else:
+            col_name = name
+
+        return self.client.get_or_create_collection(name=col_name) 
 
     def add_documents(
             self, 
@@ -55,7 +71,7 @@ class VectorStoreManager:
         ids = [f"doc_{i}" for i in range(len(documents))]           # document identifiers
         
         if metadatas is None:
-            metadatas = [{} for _ in documents]
+            metadatas = [{"source": "unknown"} for _ in documents]
         
         self.collection.add(
             documents=documents,
@@ -63,10 +79,33 @@ class VectorStoreManager:
             metadatas=metadatas,
             ids=ids
         )
+        
+    def add_image_embeddings(
+            self,
+            image_ids: List[str],
+            embeddings: List[List[float]],
+            metadatas: List[Dict]
+        ) -> None:
+        """
+        Adds image embeddings to the image collection.
+        
+        args:
+        - image_ids (List[str]): a list of IDs for images
+        - embeddings (List[List[float]]): a list of DINO embeddings for each image
+        - metadatas (List[Dict]): a list of dictionaries containing image metadata
+        """
+        if not self.image_collection:
+            raise RuntimeError("Multi‑modal is not enabled. Set use_multimodal=True in config.")
+        
+        self.image_collection.add(
+            embeddings=embeddings,
+            metadatas=metadatas,
+            ids=image_ids
+        )
 
     def search(
             self, 
-            query: str, 
+            query: str | List[float], 
             n_results: int = None,
             include: set[Literal["documents", "embeddings", "metadatas", "distances"]] = None
         ) -> Dict:
@@ -88,11 +127,57 @@ class VectorStoreManager:
             include = ["documents", "metadatas", "distances"]
 
         include = list(include)
+
+        if isinstance(query, list):
+            # query is an embedding
+            if all(isinstance(x, float) for x in query):
+                return self.collection.query(
+                    query_embeddings=[query],
+                    n_results=n_results,
+                    include=include
+                )
+            elif len(query) == 1 and isinstance(query[0], list) and all(isinstance(x, float) for x in query[0]):
+                return self.collection.query(
+                    query_embeddings=query,
+                    n_results=n_results,
+                    include=include
+                )
         
-        return self.collection.query(
-            query_texts=[query],
+        else:
+            # query is text only
+            return self.collection.query(
+                query_texts=[query],
+                n_results=n_results,
+                include=include
+            )
+        
+    def search_images(
+            self,
+            query_embedding: List[float],
+            n_results: int = None,
+            include: set[Literal["documents", "embeddings", "metadatas", "distances"]] = None
+        ) -> Dict:
+        """
+        Searches for images by embedding similarity.
+        
+        args:
+        - query_embedding (List[float]): DINO embedding of the query (image or text)
+        - n_results (int): number of results to return
+        - include (set): a set of items to include in query output
+
+        returns:
+        - a dictionary containing the retrieved items
+        """
+        if not self.image_collection:
+            raise RuntimeError("Multi‑modal is not enabled. Set use_multimodal=True in config.")
+
+        if n_results is None:
+            n_results = self.config.top_k
+
+        return self.image_collection.query(
+            query_embeddings=[query_embedding],
             n_results=n_results,
-            include=include
+            include=["metadatas", "distances"]
         )
 
     def get_collection_info(self) -> Dict:

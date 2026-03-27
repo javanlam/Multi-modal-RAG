@@ -2,6 +2,8 @@ import base64
 from mimetypes import guess_type
 import fitz
 import os
+from PIL import Image
+from io import BytesIO
 from typing import List, Dict
 
 
@@ -27,6 +29,26 @@ def local_image_to_data_url(image_path: str) -> str:
 
     # construct the data URL
     return f"data:{mime_type};base64,{base64_encoded_data}"
+
+
+def data_url_to_pil(data_url: str) -> Image.Image:
+    """
+    Converts an image data URL to a PIL Image.
+    
+    args:
+    - data_url (str): the image data URL
+
+    returns:
+    - a PIL Image object of the image
+    """
+    if not data_url.startswith("data:image/"):
+        raise ValueError("Invalid image data URL")
+    
+    header, encoded = data_url.split(",", 1)
+    
+    image_bytes = base64.b64decode(encoded)
+
+    return Image.open(BytesIO(image_bytes)).convert("RGB")
 
 
 def extract_images_with_context(pdf_path: str, output_image_dir: str) -> List[Dict]:

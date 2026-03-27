@@ -121,7 +121,7 @@ Hypothetical Document:
             context_docs = []
             for community in results["communities"]:
                 context_docs.append(
-                    f"Community {community['community_id']}: {community['summary']}\n"
+                    f"Community {community['community_id']}: {community['community_summary']}\n"
                     f"Key entities: {', '.join(community['entities'])}"
                 )
 
@@ -136,11 +136,11 @@ Hypothetical Document:
             return retrieval_results
 
         else:
-            results = self.graph_store.search_by_entity(question=question)
+            results = self.graph_store.search_by_entity(query=question)
 
             context_docs = []
 
-            for entity in results["matching_entites"][:3]:
+            for entity in results["matching_entities"][:3]:
                 context_docs.append(
                     f"Entity: {entity['name']}\n"
                     f"Description: {entity['description']}\n"

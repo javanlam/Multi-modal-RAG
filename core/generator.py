@@ -44,7 +44,7 @@ class ResponseGenerator:
         """
         Generates a response using context and query.
         
-        args;
+        args:
         - query (str): user query to generate a response to
         - context_documents (List[str]): a list of documents retrieved from external knowledge base, to act as context
 

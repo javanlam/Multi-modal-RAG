@@ -2,8 +2,8 @@ import chromadb
 from typing import List, Dict, Any
 from config.settings import RAGConfig
 from models.embeddings import EmbeddingModel
-from generator import ResponseGenerator
-from vector_store import VectorStoreManager
+from .generator import ResponseGenerator
+from .vector_store import VectorStoreManager
 
 
 class HyDERetriever:

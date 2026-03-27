@@ -3,6 +3,7 @@ import PyPDF2
 import fitz
 import base64
 import docx
+import json
 from typing import List, Union, Tuple, Dict, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from config.settings import RAGConfig
@@ -86,7 +87,7 @@ class DocumentProcessor:
                 if extract_images:
                     images_metadata.extend(self._extract_images_from_pdf_page(pdf_doc, page_num, page_text, file_path))
 
-                pdf_doc.close()
+            pdf_doc.close()
 
         text = "\n".join(text_parts)
 
@@ -281,7 +282,7 @@ Caption:"""
         - a tuple of text extracted from the document and a list of image metadatas
         """
         with open(file_path, 'r', encoding='utf-8') as file:
-            return file.read()
+            return file.read(), []
 
     def insert_image_captions(self, text: str, images_metadata: List[Dict]) -> str:
         """
@@ -384,6 +385,8 @@ Caption:"""
                             "page": img_meta.get("page_num"),
                             "has_caption": img_meta.get("has_caption", False)
                         })
+
+            metadata["images"] = json.dumps(metadata["images"])     # lists cannot be stored in ChromaDB
 
             metadatas.append(metadata)
 
