@@ -73,12 +73,12 @@ class ImageStore:
             image_id = metadata.get("image_id")
             if not image_id:
                 image_hash = hashlib.md5(image_data_url.encode()).hexdigest()
-                image_id = f"{metadata.get('source_file', 'unknown')}_{metadata.get('page_num', 0)}_{image_hash[:8]}"
+                image_id = f"{metadata.get('source_file', 'unknown')}_{metadata.get('page_num', 0)}_{image_hash}"
             
             # check if image already exists
             if image_id in self.metadata["images"]:
                 print(f"Image {image_id} already exists in store")
-                return image_id
+                return ""
             
             # extract image data from data URL
             header, data = image_data_url.split(",", 1)

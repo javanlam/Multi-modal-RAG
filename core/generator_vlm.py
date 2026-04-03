@@ -74,14 +74,18 @@ class ResponseGeneratorVLM(ResponseGenerator):
 {"" if not query_img else f"The user has provided an image in their query, and it is the first {len(query_img)} images among all images presented to you."}
 {"" if not context_images else f"The last {len(context_images)} presented to you are relevant visual context to assist you in answering the question."}   
 
-Based on the following context, please answer the question. If the context doesn't contain relevant information, state that clearly.
+Based on the following context, please answer the question.
 
 Context:
 {context}
 
 Question: {query}
 
-Please provide a comprehensive answer based solely on the context provided. If the context is insufficient, explain what information is missing.
+Please provide a comprehensive answer based on the context provided.
+If you find the context insufficient for answering the question, gently reject answering the question.
+
+You act as a chatbot and are having a conversation with the user.
+Provide a natural response as in a conversation.
 
 Answer:"""
         

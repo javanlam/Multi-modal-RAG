@@ -119,19 +119,24 @@ class DocumentProcessor:
         for img_index, img in enumerate(image_list):
             try:
                 xref = img[0]
-                base_image = pdf_doc.extract_image(xref)
-                image_bytes = base_image["image"]
-                
-                # create image data URL
-                mime_type = base_image.get("ext", "png")
-                if mime_type.lower() in ["jpg", "jpeg"]:
-                    mime_type = "image/jpeg"
+                pix = fitz.Pixmap(pdf_doc, xref)
+
+                # only process RGB or grayscale images
+                if pix.n - pix.alpha < 4:
+                    image_bytes = pix.tobytes()
+                    
+                    image_format = "png"
+                    mime_type = "image/png"
+                    
+                    # convert to base64 data URL
+                    base64_image = base64.b64encode(image_bytes).decode('utf-8')
+                    image_data_url = f"data:{mime_type};base64,{base64_image}"
                 else:
-                    mime_type = f"image/{mime_type}"
-                
-                base64_image = base64.b64encode(image_bytes).decode('utf-8')
-                image_data_url = f"data:{mime_type};base64,{base64_image}"
-                
+                    # skip other formats (not RGB or grayscale)
+                    continue
+
+                pix = None
+
                 # get surrounding text context
                 context = self._get_image_context(page, img)
                 
@@ -156,8 +161,9 @@ class DocumentProcessor:
                 if self.image_store:
                     try:
                         stored_id = self.image_store.store_image(image_data_url, image_metadata)
-                        image_metadata["stored"] = True
-                        image_metadata["image_id"] = stored_id
+                        if stored_id:
+                            image_metadata["stored"] = True
+                            image_metadata["image_id"] = stored_id
                     except Exception as e:
                         print(f"Error storing image {img_index} from page {page_num}: {str(e)}")
 
@@ -392,7 +398,7 @@ Caption:"""
 
         return chunks, metadatas
 
-    def process_directory(self, directory_path: str, extract_images: bool = True) -> Tuple[List[str], List[dict]]:
+    def process_directory(self, directory_path: str, extract_images: bool = True) -> Tuple[List[str], List[dict], List[dict]]:
         """
         Processes all supported documents in a directory.
         
@@ -401,10 +407,12 @@ Caption:"""
         - extract_images (bool): whether to extract and process images
 
         returns:
-        - a tuple containing a list of chunked text pieces, and a list of dictionaries containing chunk metadata
+        - a tuple containing a list of chunked text pieces, a list of dictionaries containing chunk metadata, 
+            and a list of dictionaries containing image metadata
         """
         all_chunks = []
         all_metadatas = []
+        image_metadata_list = []
         supported_extensions = {'.pdf', '.docx', '.txt'}
         
         for filename in os.listdir(directory_path):
@@ -414,14 +422,16 @@ Caption:"""
                 try:
                     text, images_metadata = self.load_document(file_path, extract_images)
                     text_captioned = self.insert_image_captions(text, images_metadata)
+                    image_metadata_list.extend(images_metadata)
 
                     chunks, metadatas = self.chunk_text(text_captioned, source_file=filename, images_metadata=images_metadata)
                     all_chunks.extend(chunks)
                     all_metadatas.extend(metadatas)
 
                     print(f"Processed {filename}: {len(chunks)} chunks")
+                    print(f"{len(images_metadata)} images extracted")
 
                 except Exception as e:
                     print(f"Error processing {filename}: {str(e)}")
         
-        return all_chunks, all_metadatas
+        return all_chunks, all_metadatas, image_metadata_list

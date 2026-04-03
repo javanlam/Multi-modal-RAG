@@ -28,13 +28,14 @@ class RAGSystem:
         self.config = config or RAGConfig.from_env()
 
         self.vlm_generator = ResponseGeneratorVLM(self.config) if config.generate_image_captions else None
-        self.document_processor = DocumentProcessor(self.config, self.vlm_generator)
-
+        
         if self.config.extract_images:
             self.image_store = ImageStore(self.config.image_store_dir)
             print(f"Image store initialized at: {self.config.image_store_dir}")
         else:
             self.image_store = None
+        
+        self.document_processor = DocumentProcessor(self.config, self.vlm_generator, self.image_store)
 
         self.multimodal_embedding = None
         if self.config.use_multimodal:
@@ -96,7 +97,7 @@ class RAGSystem:
             )
 
         else:                                   # processes a directory
-            chunks, metadatas = self.document_processor.process_directory(source_path, self.config.extract_images)
+            chunks, metadatas, images_metadata = self.document_processor.process_directory(source_path, self.config.extract_images)
 
         if self.config.retrieval_mode == "vector":
             embeddings = self.embedding.encode(chunks)
@@ -218,11 +219,6 @@ class RAGSystem:
                     chunk_image_urls = self.get_image_data_urls(image_ids)
                     retrieved_image_data_urls.extend(chunk_image_urls)
 
-        # context_images = []
-        # if self.image_store and retrieved_has_images and retrieved_image_ids and use_vlm:
-        #     context_images = self.get_image_data_urls(retrieved_image_ids)
-        #     print(f"Retrieved {len(context_images)} images for context")
-
         context_images = retrieved_image_data_urls
         if context_images:
             print(f"Using {len(context_images)} images as context")
@@ -230,7 +226,7 @@ class RAGSystem:
         if use_vlm and self.vlm_generator and (retrieved_has_images or context_images or query_images):
             generation_result = self.vlm_generator.generate_response(
                 question, 
-                retrieval_result["documents"],
+                context_documents=retrieval_result["documents"],
                 query_img=query_images,
                 context_images=context_images if context_images else None
             )
@@ -239,7 +235,7 @@ class RAGSystem:
         else:
             generation_result = self.generator.generate_response(
                 question, 
-                retrieval_result["documents"]
+                context_documents=retrieval_result["documents"]
             )
             generator_type = "text-only"
         
@@ -377,7 +373,7 @@ if __name__ == "__main__":
         if question.lower() == 'quit':
             break
 
-        use_vlm = False
+        use_vlm = True
         if any(keyword in question.lower() for keyword in ['image', 'picture', 'photo', 'chart', 'diagram', 'graph', 'visual']):
             use_vlm_response = input("This question seems to be about images. Use VLM for better answers? (y/n): ")
             use_vlm = use_vlm_response.lower() == 'y'
@@ -386,6 +382,8 @@ if __name__ == "__main__":
         
         print(f"\nAnswer: {result['answer']}")
         print(f"\nSources retrieved: {result['retrieval_metadata']['documents_retrieved']}")
+        for i in range(len(result['source_documents'])):
+            print(f"Source {i}: {result['source_documents']}")
 
         if result['retrieval_metadata']['has_images_in_retrieved']:
             print(f"Note: Retrieved documents contain images")

@@ -47,7 +47,7 @@ class VectorStoreManager:
 
     def add_documents(
             self, 
-            documents: List[str], 
+            documents: Optional[List[str]] = None, 
             embeddings: Optional[List[List[float]]] = None, 
             metadatas: Optional[List[dict]] = None
         ) -> None:
@@ -55,8 +55,8 @@ class VectorStoreManager:
         Adds documents to the vector database.
         
         args:
-        - documents (List[str]): a list of text strings (documents) to add to the database
-        - embeddings (List[List[float]]): a list of text embeddings corresponding to some text strings
+        - documents (Optional[List[str]]): a list of text strings (documents) to add to the database
+        - embeddings (Optional[List[List[float]]]): a list of text embeddings corresponding to some text strings
         - metadatas (Optional[List[Dict]]): a list of dictionaries containing document metadata
         """
         target = documents if documents else embeddings             # checks for whether the add request is valid
@@ -68,11 +68,17 @@ class VectorStoreManager:
         import os
         os.makedirs(self.config.persist_directory, exist_ok=True)
         
-        ids = [f"doc_{i}" for i in range(len(documents))]           # document identifiers
-        
         if metadatas is None:
             metadatas = [{"source": "unknown"} for _ in documents]
-        
+            ids = [f"doc_{i}" for i in range(len(documents))]       # document identifiers
+        else:
+            ids = []
+            for i, metadata in enumerate(metadatas):
+                source_file = metadata.get("source_file", "unknown")
+                chunk_index = metadata.get("chunk_index", i)
+                doc_id = f"{source_file}__chunk_{chunk_index}"
+                ids.append(doc_id)
+
         self.collection.add(
             documents=documents,
             embeddings=embeddings,

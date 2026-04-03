@@ -72,14 +72,18 @@ class ResponseGenerator:
         returns:
         - a string containing the prompt to the LLM.
         """
-        prompt = f"""Based on the following context, please answer the question. If the context doesn't contain relevant information, state that clearly.
+        prompt = f"""Based on the following context, please answer the question.
 
 Context:
 {context}
 
 Question: {query}
 
-Please provide a comprehensive answer based solely on the context provided. If the context is insufficient, explain what information is missing.
+Please provide a comprehensive answer based on the context provided.
+If you find the context insufficient for answering the question, gently reject answering the question.
+
+You act as a chatbot and are having a conversation with the user.
+Provide a natural response as in a conversation.
 
 Answer:"""
         

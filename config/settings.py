@@ -45,7 +45,7 @@ class RAGConfig:
     embedding_dimension: int = 384
 
     # for multimodal models
-    use_multimodal: bool = False
+    use_multimodal: bool = True
     dinov2_model_name: str = "facebook/dinov2-base"
     dinov2_embedding_dim: int = 768
     clip_model_id: str = "ViT-B/16"

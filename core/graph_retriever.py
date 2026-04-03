@@ -107,6 +107,9 @@ Hypothetical Document:
         args:
         - question (str): question from the user
         - use_enhancement (bool): whether to enhance user prompt
+
+        returns:
+        - a dictionary containing retrieved documents and retrieval metadata
         """
         question_type = self._classify_question_type(question=question)
 
