@@ -18,13 +18,9 @@ class VectorStoreManager:
         self.config = config
         self.client = chromadb.PersistentClient(path=config.persist_directory)
         self.collection = self._get_or_create_collection()
-        self.image_collection = None
 
         self.collection_name = config.collection_name
         self.directory = config.persist_directory
-
-        if config.use_multimodal:
-            self.image_collection = self._get_or_create_collection(name=f"{config.collection_name}_images")
 
     def _get_or_create_collection(self, name: str = None) -> chromadb.Collection:
         """
@@ -85,29 +81,6 @@ class VectorStoreManager:
             metadatas=metadatas,
             ids=ids
         )
-        
-    def add_image_embeddings(
-            self,
-            image_ids: List[str],
-            embeddings: List[List[float]],
-            metadatas: List[Dict]
-        ) -> None:
-        """
-        Adds image embeddings to the image collection.
-        
-        args:
-        - image_ids (List[str]): a list of IDs for images
-        - embeddings (List[List[float]]): a list of DINO embeddings for each image
-        - metadatas (List[Dict]): a list of dictionaries containing image metadata
-        """
-        if not self.image_collection:
-            raise RuntimeError("Multi‑modal is not enabled. Set use_multimodal=True in config.")
-        
-        self.image_collection.add(
-            embeddings=embeddings,
-            metadatas=metadatas,
-            ids=image_ids
-        )
 
     def search(
             self, 
@@ -157,35 +130,6 @@ class VectorStoreManager:
                 include=include
             )
         
-    def search_images(
-            self,
-            query_embedding: List[float],
-            n_results: int = None,
-            include: set[Literal["documents", "embeddings", "metadatas", "distances"]] = None
-        ) -> Dict:
-        """
-        Searches for images by embedding similarity.
-        
-        args:
-        - query_embedding (List[float]): DINO embedding of the query (image or text)
-        - n_results (int): number of results to return
-        - include (set): a set of items to include in query output
-
-        returns:
-        - a dictionary containing the retrieved items
-        """
-        if not self.image_collection:
-            raise RuntimeError("Multi‑modal is not enabled. Set use_multimodal=True in config.")
-
-        if n_results is None:
-            n_results = self.config.top_k
-
-        return self.image_collection.query(
-            query_embeddings=[query_embedding],
-            n_results=n_results,
-            include=["metadatas", "distances"]
-        )
-
     def get_collection_info(self) -> Dict:
         """
         Gets information about the collection.

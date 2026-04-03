@@ -31,6 +31,8 @@ class RAGConfig:
     extract_images: bool = True
     generate_image_captions: bool = True
     image_store_dir: str = "./image_store"
+    image_embeddings_collection: str = "image_embeddings"
+    caption_embeddings_collection: str = "caption_embeddings"
     vlm_model: str = "gpt-4o-mini"
     max_image_context_length: int = 500
     image_caption_prompt: str = """Provide a concise, descriptive caption for this image based on the surrounding text context."""
@@ -81,6 +83,8 @@ class RAGConfig:
             extract_images=os.getenv("EXTRACT_IMAGES", "true").lower() == "true",
             generate_image_captions=os.getenv("GENERATE_IMAGE_CAPTIONS", "true").lower() == "true",
             image_store_dir=os.getenv("IMAGE_STORE_DIR", "./image_store"),
+            image_embeddings_collection=os.getenv("IMAGE_EMBEDDINGS_COLLECTION", "image_embedddings"),
+            caption_embeddings_collection=os.getenv("CAPTION_EMBEDDINGS_COLLECTION", "caption_embeddings"),
             vlm_model=os.getenv("VLM_MODEL", "gpt-4o-mini"),
             max_image_context_length=os.getenv("MAX_IMAGE_CONTEXT_LENGTH", "500"),
             image_caption_prompt=os.getenv("IMAGE_CAPTION_PROMPT", """Provide a concise, descriptive caption for this image based on the surrounding text context."""),

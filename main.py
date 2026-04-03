@@ -4,6 +4,7 @@ from typing import Dict, List, Tuple, Optional
 from config.settings import RAGConfig
 from core.document_processor import DocumentProcessor
 from core.vector_store import VectorStoreManager
+from core.multi_vector_store import MultiVectorStoreManager
 from core.graph_store import GraphStorageManager
 from core.retriever import HyDERetriever
 from core.graph_retriever import GraphRetriever
@@ -42,6 +43,8 @@ class RAGSystem:
             try:
                 self.multimodal_embedding = MultimodalEmbeddingModel(self.config)
                 print("Multi‑modal embedding model (DINOv2+Talk2DINO) loaded.")
+
+                self.multi_vector_store = MultiVectorStoreManager(self.config)
             except Exception as e:
                 print(f"Failed to load multi‑modal embedding model: {e}")
                 self.config.use_multimodal = False      # prevent errors
@@ -122,12 +125,14 @@ class RAGSystem:
             image_ids = []
             image_embeddings = []
             image_metadatas = []
+            caption_embeddings = []
 
             for img_meta in images_metadata:
                 image_id = img_meta.get("image_id")
 
                 if not image_id:
                     continue
+
                 # get the stored image data URL from ImageStore (or from metadata)
                 data_url = self.image_store.get_image_data_url(image_id)
 
@@ -138,18 +143,25 @@ class RAGSystem:
                     emb = self.multimodal_embedding.encode_image(data_url)
                     image_ids.append(image_id)
                     image_embeddings.append(emb)
+
+                    image_caption = img_meta.get("caption", "")
+
                     image_metadatas.append({
                         "image_id": image_id,
-                        "caption": img_meta.get("caption", ""),
+                        "caption": image_caption,
                         "source_file": img_meta.get("source_file", "unknown"),
                         "page_num": img_meta.get("page_num", 0),
                         "has_caption": img_meta.get("has_caption", False)
                     })
+
+                    caption_emb = self.embedding.encode_single(image_caption)
+                    caption_embeddings.append(caption_emb)
                 except Exception as e:
                     print(f"Error computing embedding for image {image_id}: {e}")
+                    continue
 
             if image_ids:
-                self.vector_store.add_image_embeddings(image_ids, image_embeddings, image_metadatas)
+                self.multi_vector_store.add_image_batch(image_ids, image_embeddings, caption_embeddings, image_metadatas)
                 print(f"Added {len(image_ids)} image embeddings to vector store.")
 
     def query(
@@ -179,19 +191,31 @@ class RAGSystem:
         retrieved_image_data_urls = []
         retrieved_has_images = False
 
-        if self.config.use_multimodal and self.multimodal_embedding and self.vector_store and hasattr(self.vector_store, 'image_collection') and self.vector_store.image_collection:
+        if self.config.use_multimodal and self.multimodal_embedding and self.multi_vector_store:
             try:
-                # query embedding
-                query_emb = self.multimodal_embedding.encode_query(
-                    text=question, 
-                    image_data_url=query_images[0] if query_images else None
-                )
+                # search by text
+                query_emb_text = self.multimodal_embedding.encode_query(text=question)
+                text_to_caption_results, text_to_image_results = self.multi_vector_store.search_by_caption(query_emb_text, n_results=self.config.top_k)
 
-                # search images by embedding similarity
-                image_results = self.vector_store.search_images(query_emb, n_results=self.config.top_k)
+                # search by images (if any)
+                query_emb_imgs = []
+                by_image_results = []
+                
+                if query_images:
+                    query_emb_img = self.multimodal_embedding.encode_query(image_data_url=query_images[0])
+                    query_emb_imgs.append(query_emb_img)
 
-                if image_results and image_results.get('ids') and image_results['ids'][0]:
-                    retrieved_image_ids = image_results['ids'][0]
+                    for query_img in query_emb_imgs:
+                        by_image_result = self.multi_vector_store.search_by_image(query_img, n_results=self.config.top_k)
+                        by_image_results.append(by_image_result)
+
+                if text_to_caption_results and text_to_image_results and by_image_results:
+                    retrieved_image_ids.extend(text_to_caption_results['ids'][0])
+                    retrieved_image_ids.extend(text_to_image_results['ids'][0])
+                    retrieved_image_ids.extend(by_image_result['ids'][0] for by_image_result in by_image_results)
+
+                    # remove duplicates
+                    retrieved_image_ids = list(set(retrieved_image_ids))
                     
                     # retrieve image URLs from image store
                     retrieved_image_data_urls = self.get_image_data_urls(retrieved_image_ids)
