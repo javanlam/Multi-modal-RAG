@@ -57,15 +57,16 @@ class GraphStorageManager:
     Manages graph-based storage and retrieval using knowledge graphs.
     """
     
-    def __init__(self, config: RAGConfig):
+    def __init__(self, config: RAGConfig, generator: ResponseGenerator):
         """
         Initializes an instance of the graph storage manager class for graph structures and storage paths.
 
         args:
         - config (RAGConfig): an instance of the data class for configuration settings
+        - generator (ResponseGenerator): generator to process text chunks
         """
         self.config = config
-        self.generator = ResponseGenerator(config=config)
+        self.generator = generator
         self.embedding = EmbeddingModel(config=config)
         self.graph = nx.Graph()
         self.entities = {}                                  # maps entity ids to EntityNode objects
@@ -95,7 +96,7 @@ class GraphStorageManager:
             chunk_id = metadata.get("chunk_index", i)
 
             prompt = self._build_entity_extraction_prompt(text=chunk)
-            response = self.generator.generate_openai_response(prompt=prompt, query=chunk)
+            response = self.generator.llm.generate_response(user_prompt=prompt)
 
             try:
                 response_output = response.get("answer", "Error generating response.")
@@ -284,7 +285,7 @@ Response:
 
             prompt = self._build_community_summary_prompt(community_info=community_info)
 
-            response = self.generator.generate_openai_response(prompt=prompt, query="")
+            response = self.generator.llm.generate_response(user_prompt=prompt)
 
             try:
                 summary = response.get("answer", "Error generating response.")

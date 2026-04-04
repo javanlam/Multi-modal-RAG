@@ -7,7 +7,7 @@ import json
 from typing import List, Union, Tuple, Dict, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from config.settings import RAGConfig
-from .generator_vlm import ResponseGeneratorVLM
+from .generator import ResponseGenerator
 from .image_store import ImageStore
 
 
@@ -19,7 +19,7 @@ class DocumentProcessor:
     def __init__(
             self, 
             config: RAGConfig, 
-            vlm_generator: Optional[ResponseGeneratorVLM] = None,
+            generator: Optional[ResponseGenerator] = None,
             image_store: Optional[ImageStore] = None
         ):
         """
@@ -27,7 +27,7 @@ class DocumentProcessor:
 
         args:
         - config (RAGConfig): an instance of the data class for configuration settings
-        - vlm_generator (Optional[ResponseGeneratorVLM]): optional VLM generator for image captioning
+        - generator (Optional[ResponseGenerator]): optional generator for image captioning
         - image_store (Optional[ImageStore]): optional image store for managing extracted images
         """
         self.config = config
@@ -36,7 +36,7 @@ class DocumentProcessor:
             chunk_overlap=config.chunk_overlap,
             separators=["\n\n", "\n", ". ", " ", ""]
         )
-        self.vlm_generator = vlm_generator
+        self.generator = generator
         self.image_store = image_store
 
     def load_document(self, file_path: str, extract_images: bool = True) -> Tuple[str, List[Dict]]:
@@ -234,11 +234,10 @@ The caption should:
 4. Start with "Image: "
 
 Caption:"""
-            
-            response = self.vlm_generator.generate_openai_response(
-                prompt=prompt,
-                query="Generate image caption",
-                context_images=[image_data_url]
+
+            response = self.generator.llm.generate_response(
+                user_prompt=prompt,
+                images=[image_data_url]
             )
             
             if "error" not in response:

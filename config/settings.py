@@ -40,7 +40,7 @@ class RAGConfig:
     # LLM client
     llm_provider: str = "openai-azure"
     llm_model: str = "gpt-4o-mini"
-    temperature: float = 0.1
+    temperature: float = 0.9
 
     # for vector embedding mode
     embedding_model: str = "all-MiniLM-L6-v2"

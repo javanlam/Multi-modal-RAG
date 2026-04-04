@@ -2,8 +2,12 @@ import os
 from pathlib import Path
 import dotenv
 import openai
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from config.settings import RAGConfig
+from models.llm_gemini import LLM_Gemini
+from models.llm_openai import LLM_OpenAI
+from models.llm_openai_azure import LLM_OpenAI_Azure
+from models.llm_qwen import LLM_Qwen
 
 
 class ResponseGenerator:
@@ -31,6 +35,7 @@ class ResponseGenerator:
         if self.config.llm_provider == "openai":
             openai.api_key = os.getenv("OPENAI_API_KEY")
             self.llm_client = None
+            self.llm = LLM_OpenAI(self.config)
 
         elif self.config.llm_provider == "openai-azure":
             self.llm_client = openai.AzureOpenAI(
@@ -39,40 +44,82 @@ class ResponseGenerator:
                 azure_endpoint = "https://hkust.azure-api.net",
                 azure_deployment = self.config.llm_model
             )
+            self.llm = LLM_OpenAI_Azure(self.config)
+
+        elif self.config.llm_provider == "google":
+            self.llm = LLM_Gemini(self.config)
+
+        elif self.config.llm_provider == "qwen":
+            self.llm = LLM_Qwen(self.config)
+
+        else:
+            self.llm = LLM_OpenAI_Azure(self.config)
     
-    def generate_response(self, query: str, context_documents: List[str]) -> Dict[str, Any]:
+    def generate_response(
+            self, 
+            query: str, 
+            context_documents: str, 
+            query_img: Optional[List[str]] = None,
+            context_images: Optional[List[str]] = None
+        ) -> Dict[str, Any]:
         """
         Generates a response using context and query.
         
         args:
         - query (str): user query to generate a response to
         - context_documents (List[str]): a list of documents retrieved from external knowledge base, to act as context
+        - query_img (Optional[List[str]]): a list of encoded image URLs in the user's query
+        - context_images (Optional[List[str]]): a list of encoded image URLs for images retrieved from external knowledge base, to act as context
 
         returns:
         - a dictionary containing the generated response and additional information
         """
         context = "\n\n".join([f"Document {i+1}: {doc}" for i, doc in enumerate(context_documents)])
         
-        prompt = self._build_prompt(query, context)
-        
-        if self.config.llm_provider == "openai" or self.config.llm_provider == "openai-azure":
-            return self.generate_openai_response(prompt, query)
-        
-        else:
+        prompt = self._build_prompt(query, context, query_img, context_images)
+        system_prompt = "You are a helpful assistant that follows closely the following instructions provided by the user."
+
+        images = None
+
+        if query_img or context_images:
+            images = []
+
+            if query_img:
+                images.extend(query_img)
+            
+            if context_images:
+                images.extend(context_images)
+
+        try:
+            return self.llm.generate_response(user_prompt=prompt, system_prompt=system_prompt, images=images)
+        except:
             return self._generate_fallback_response(query, context)
 
-    def _build_prompt(self, query: str, context: str) -> str:
+    def _build_prompt(
+            self, 
+            query: str, 
+            context: str, 
+            query_img: Optional[List[str]] = None,
+            context_images: Optional[List[str]] = None
+        ) -> str:
         """
         Builds a prompt for the LLM.
         
         args:
         - query (str): user query to generate a response to
         - context (str): retrieved information from the external database to be used as context
+        - query_img (Optional[List[str]]): a list of encoded image URLs in the user's query
+        - context_images (Optional[List[str]]): a list of encoded image URLs for images retrieved from external knowledge base, to act as context
 
         returns:
         - a string containing the prompt to the LLM.
         """
-        prompt = f"""Based on the following context, please answer the question.
+        prompt = f"""You are a helpful assistant that answers questions based on retrieved context in possibly both text and visual form.
+
+{"" if not query_img else f"The user has provided an image in their query, and it is the first {len(query_img)} images among all images presented to you."}
+{"" if not context_images else f"The last {len(context_images)} presented to you are relevant visual context to assist you in answering the question."}   
+
+Based on the following context, please answer the question.
 
 Context:
 {context}

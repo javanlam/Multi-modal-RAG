@@ -9,21 +9,21 @@ from .vector_store import VectorStoreManager
 class HyDERetriever:
     """
     Enhanced document retriever with Hypothetical Document Embeddings (HyDE).
-    Helps generalize to other unseen domains.
-    Details can be found at https://aclanthology.org/2023.acl-long.99.pdf
     """
     
-    def __init__(self, vector_store: VectorStoreManager, config: RAGConfig):
+    def __init__(self, vector_store: VectorStoreManager, config: RAGConfig, generator: ResponseGenerator):
         """
         Initializes an instance of the retriever with configurations provided.
 
         args:
         - vector_store (VectorStoreManager): a VectorStoreManager object that acts as the external knowledge base
         - config (RAGConfig): an instance of the data class for configuration settings
+        - generator (ResponseGenerator): generator to obtain enhanced query
         """
         self.vector_store = vector_store
         self.config = config
-        self.embedding_model = EmbeddingModel(config)
+        self.embedding_model = EmbeddingModel(self.config)
+        self.generator = ResponseGenerator(self.config)
 
     def enhance_query(self, query: str) -> str:
         """
@@ -44,8 +44,7 @@ Query: {query}
 Hypothetical Document:
 """
             
-            generator = ResponseGenerator(config=self.config)
-            enhanced_prompt_output = generator.generate_openai_response(prompt=prompt, query="")
+            enhanced_prompt_output = self.generator.llm.generate_response(user_prompt=prompt)
 
             enhanced_prompt = enhanced_prompt_output.get("answer", query)
 

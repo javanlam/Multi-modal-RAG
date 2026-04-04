@@ -10,17 +10,18 @@ class GraphRetriever:
     Handles both entity-specific and global questions.
     """
     
-    def __init__(self, graph_store: GraphStorageManager, config: RAGConfig):
+    def __init__(self, graph_store: GraphStorageManager, config: RAGConfig, generator: ResponseGenerator):
         """
         Initializes an instance of the graph retriever.
 
         args:
         - graph_store (GraphStorageManager): an instance of the graph storage manager
         - config (RAGConfig): an instance of the data class for configuration settings
+        - generator (ResponseGenerator): generator to obtain enhanced query
         """
         self.graph_store = graph_store
         self.config = config
-        self.generator = ResponseGenerator(config=config)
+        self.generator = generator
     
     def _classify_question_type(self, question: str) -> str:
         """
@@ -65,7 +66,7 @@ Query: {query}
 Hypothetical Document:
 """
             
-            enhanced_prompt_output = self.generator.generate_openai_response(prompt=prompt, query="")
+            enhanced_prompt_output = self.generator.llm.generate_response(user_prompt=prompt)
 
             enhanced_prompt = enhanced_prompt_output.get("answer", query)
 
