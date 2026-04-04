@@ -6,6 +6,7 @@ from typing import List, Optional, Union
 import numpy as np
 import clip
 from transformers import AutoImageProcessor, AutoModel, AutoTokenizer, AutoModelForTextEncoding
+from LongCLIP.model import longclip
 from config.settings import RAGConfig
 
 
@@ -26,9 +27,12 @@ class MultimodalEmbeddingModel:
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         # load DINOv2 model
-        self.image_processor = AutoImageProcessor.from_pretrained(config.dinov2_model_name, trust_remote_code=True)
+        self.image_processor = AutoImageProcessor.from_pretrained(config.dinov2_model_name, trust_remote_code=True, use_fast=True)
         self.image_model = AutoModel.from_pretrained(config.dinov2_model_name, trust_remote_code=True).to(self.device)
         self.image_model.eval()
+
+        # load LongCLIP model
+        self.longclip_model, self.longclip_preprocess = longclip.load("./LongCLIP/checkpoints/longclip-B.pt", device=self.device)
 
         # load Talk2DINO model
         self.clip_model, self.clip_preprocess = clip.load(config.clip_model_id, device=self.device, jit=False)
@@ -86,7 +90,10 @@ class MultimodalEmbeddingModel:
         returns:
         - the corresponding embedding vector in DINOv2 embedding space
         """
-        outputs = self.text_model.encode_text(text)
+        text_tokenized = longclip.tokenize(text).to(self.device)
+        text_features = self.longclip_model.encode_text(text_tokenized)
+
+        outputs = self.text_model.proj.project_clip_txt(text_features)
 
         return outputs.cpu().numpy().flatten().tolist()
 
@@ -121,7 +128,10 @@ class MultimodalEmbeddingModel:
         returns:
         - the corresponding embedding vector in DINOv2 embedding space
         """
-        outputs = self.text_model.encode_text(texts)
+        texts_tokenized = longclip.tokenize(texts).to(self.device)
+        texts_features = self.longclip_model.encode_text(texts_tokenized)
+
+        outputs = self.text_model.clip2dino_proj.project_clip_txt(texts_features)
 
         return outputs.cpu().numpy().tolist()
 
