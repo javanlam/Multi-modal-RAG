@@ -1,9 +1,10 @@
 import os
-import PyPDF2
 import fitz
 import base64
 import docx
 import json
+import subprocess
+import tempfile
 from typing import List, Union, Tuple, Dict, Optional
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from config.settings import RAGConfig
@@ -72,132 +73,214 @@ class DocumentProcessor:
         returns:
         - a tuple of text extracted from the document and a list of image metadatas
         """
-        images_metadata = []
-        text_parts = []
+        doc = fitz.open(file_path)
+        all_images_metadata = []
+        page_texts = []
 
-        with open(file_path, 'rb') as file:
-            reader = PyPDF2.PdfReader(file)
-            pdf_doc = fitz.open(file_path)
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            
+            # sorted items in reading order
+            items = self._get_sorted_page_items(page, extract_images)
+            
+            # build page content
+            page_text, page_images = self._build_page_content(doc, page, items, page_num, file_path)
+            
+            all_images_metadata.extend(page_images)
+            page_texts.append(page_text)
+            page_texts.append("\f")   # page separator
 
-            for page_num in range(len(reader.pages)):
-                page = reader.pages[page_num]
-                page_text = page.extract_text() + "\n"
-                text_parts.append(page_text)
+        doc.close()
+        full_text = "\n".join(page_texts).rstrip("\f")
+        return full_text, all_images_metadata
 
-                if extract_images:
-                    images_metadata.extend(self._extract_images_from_pdf_page(pdf_doc, page_num, page_text, file_path))
-
-            pdf_doc.close()
-
-        text = "\n".join(text_parts)
-
-        return text, images_metadata
-    
-    def _extract_images_from_pdf_page(
-            self, 
-            pdf_doc: fitz.Document, 
-            page_num: int, 
-            page_text: str, 
-            file_path: str
-        ) -> List[Dict]:
+    def _get_sorted_page_items(self, page: fitz.Page, extract_images: bool) -> List[Dict]:
         """
-        Extracts images from a PDF page and generates captions.
-
+        Extracts text and images from a page and sort by reading order.
+        
         args:
-        - pdf_doc (fitz.Document): the PDF file to process
-        - page_num (int): page number to extract images from
-        - page_text (str): text content of the page
+        - page (fitz.Page): the document page to process
+        - extract_images (bool): whether to extract and process images
+
+        returns:
+        - a list of dictionaries containing text and image items on the page
+        """
+        # text
+        words = page.get_text("words")  # [x0, y0, x1, y1, word, block_no, line_no, word_no]
+        text_items = [{"type": "text", "text": w[4], "y0": w[1], "x0": w[0]} for w in words]
+        
+        # images
+        image_items = []
+
+        if extract_images:
+            for img_info in page.get_image_info():
+                bbox = fitz.Rect(img_info["bbox"])
+                image_items.append({
+                    "type": "image",
+                    "bbox": bbox,
+                    "y0": bbox.y0,
+                    "x0": bbox.x0,
+                    "xref": img_info.get("xref", 0)
+                })
+        
+        all_items = text_items + image_items
+        all_items.sort(key=lambda item: (item["y0"], item["x0"]))
+
+        return all_items
+
+    def _build_page_content(
+            self, 
+            doc: fitz.Document, 
+            page: fitz.Page, 
+            items: List[Dict],
+            page_num: int, 
+            file_path: str
+        ) -> Tuple[str, List[Dict]]:
+        """
+        Rebuilds content on a certain document page.
+        
+        args:
+        - doc (fitz.Document): the document to process
+        - page (fitz.Page): the document page to process
+        - items (List[Dict]): the list of items on the page in reading order
+        - page_num (int): page number of current page
         - file_path (str): path of document to process
 
         returns:
-        - a list of dictionaries containing image metadata
+        - a tuple of the text on page and a list of dictionaries containing image metadata
         """
-        images_metadata = []
-        page = pdf_doc.load_page(page_num)
-        image_list = page.get_images(full=True)
+        lines = []
+        current_line_words = []
+        last_y0 = None
+        threshold = 5  # pt
+        page_images = []
+        
+        for item in items:
+            if item["type"] == "text":
+                y0 = item["y0"]
 
-        for img_index, img in enumerate(image_list):
-            try:
-                xref = img[0]
-                pix = fitz.Pixmap(pdf_doc, xref)
+                if last_y0 is not None and abs(y0 - last_y0) > threshold:
+                    # new line
+                    if current_line_words:
+                        lines.append(" ".join(current_line_words))
+                        current_line_words = []
 
-                # only process RGB or grayscale images
-                if pix.n - pix.alpha < 4:
-                    image_bytes = pix.tobytes()
-                    
-                    image_format = "png"
-                    mime_type = "image/png"
-                    
-                    # convert to base64 data URL
-                    base64_image = base64.b64encode(image_bytes).decode('utf-8')
-                    image_data_url = f"data:{mime_type};base64,{base64_image}"
-                else:
-                    # skip other formats (not RGB or grayscale)
-                    continue
+                current_line_words.append(item["text"])
+                last_y0 = y0
 
+            else:  # image
+                if current_line_words:
+                    lines.append(" ".join(current_line_words))
+                    current_line_words = []
+
+                # process image and add marker as its own line
+                marker, metadata = self._process_image_item(doc, page, item, page_num, file_path)
+                lines.append(marker)
+
+                if metadata:
+                    page_images.append(metadata)
+        
+        if current_line_words:
+            lines.append(" ".join(current_line_words))
+        
+        return "\n".join(lines), page_images
+
+    def _process_image_item(
+            self, 
+            doc: fitz.Document, 
+            page: fitz.Page, 
+            item: Dict,
+            page_num: int, 
+            file_path: str
+        ) -> Tuple[str, Optional[Dict]]:
+        """
+        Processes image items on a certain document page.
+        
+        args:
+        - doc (fitz.Document): the document to process
+        - page (fitz.Page): the document page to process
+        - items (List[Dict]): the list of items on the page in reading order
+        - page_num (int): page number of current page
+        - file_path (str): path of document to process
+
+        returns:
+        - a tuple of a string containing the processed caption and a dictionary containing image metadata
+        """
+        try:
+            xref = item["xref"]
+            bbox = item["bbox"]
+            
+            # extract pixmap
+            if xref == 0:
+                pix = page.get_pixmap(clip=bbox)
+            else:
+                pix = fitz.Pixmap(doc, xref)
+            
+            if pix.n - pix.alpha >= 4:
                 pix = None
+                return "[IMAGE: unsupported format]", None
+            
+            image_bytes = pix.tobytes()
+            mime_type = "image/png"
+            base64_image = base64.b64encode(image_bytes).decode('utf-8')
+            image_data_url = f"data:{mime_type};base64,{base64_image}"
+            pix = None
+            
+            context = self._get_image_context_from_rect(page, bbox)
+            caption = None
 
-                # get surrounding text context
-                context = self._get_image_context(page, img)
-                
-                # generate caption
-                caption = None
-                if self.generator:
-                    caption = self._generate_image_caption(image_data_url, context)
-                
-                image_metadata = {
-                    "page_num": page_num + 1,
-                    "img_index": img_index,
-                    "context": context,
-                    "image_data_url": image_data_url,
-                    "caption": caption or f"Image from page {page_num + 1}",
-                    "mime_type": mime_type,
-                    "source_file": os.path.basename(file_path),
-                    "position_in_text": len(page_text.split()),
-                    "has_caption": caption is not None,
-                    "stored": False
-                }
-
-                if self.image_store:
-                    try:
-                        stored_id = self.image_store.store_image(image_data_url, image_metadata)
-                        if stored_id:
-                            image_metadata["stored"] = True
-                            image_metadata["image_id"] = stored_id
-                    except Exception as e:
-                        print(f"Error storing image {img_index} from page {page_num}: {str(e)}")
-
-                images_metadata.append(image_metadata)
-                
-            except Exception as e:
-                print(f"Error extracting image {img_index} from page {page_num}: {str(e)}")
-                continue
-
-        return images_metadata
-    
-    def _get_image_context(self, page: fitz.Page, img: Tuple, context_radius: int = 200) -> str:
+            if self.generator:
+                caption = self._generate_image_caption(image_data_url, context)
+            
+            caption_text = caption or f"Image from page {page_num + 1}"
+            marker = f"[IMAGE: {caption_text}]"
+            
+            metadata = {
+                "page_num": page_num + 1,
+                "img_index": None,   # set later if needed
+                "context": context,
+                "image_data_url": image_data_url,
+                "caption": caption_text,
+                "mime_type": mime_type,
+                "source_file": os.path.basename(file_path),
+                "has_caption": caption is not None,
+                "stored": False
+            }
+            
+            if self.image_store:
+                try:
+                    stored_id = self.image_store.store_image(image_data_url, metadata)
+                    if stored_id:
+                        metadata["stored"] = True
+                        metadata["image_id"] = stored_id
+                except Exception as e:
+                    print(f"Error storing image: {e}")
+            
+            return marker, metadata
+            
+        except Exception as e:
+            print(f"Error processing image: {e}")
+            return "[IMAGE: extraction failed]", None
+        
+    def _get_image_context_from_rect(self, page: fitz.Page, img_rect: fitz.Rect, context_radius: int = 200) -> str:
         """
-        Extracts text context around an image.
+        Extracts text surrounding an image as context for captioning.
 
         args:
         - page (fitz.Page): the page object to obtain context from
-        - img (Tuple): image tuple obtained from page.get_images()
+        - img_rect (fitz.Rect): bounding box of the image to obtain context for
         - context_radius (int): pixel radius to search for text around image
-
+        
         returns:
         - a string containing context around the image
         """
-        img_rect = page.get_image_bbox(img)
-
-        # expand rectangle to get surrounding text
         expanded_rect = fitz.Rect(
             img_rect.x0 - context_radius,
             img_rect.y0 - context_radius,
             img_rect.x1 + context_radius,
             img_rect.y1 + context_radius
         )
-        
-        # extract text
+
         context = page.get_text("text", clip=expanded_rect)
 
         return context.strip()
@@ -232,6 +315,7 @@ The caption should:
 2. Incorporate relevant information from the context
 3. Be concise (1-2 sentences)
 4. Start with "Image: "
+5. NOT express that you based it off the provided context
 
 Caption:"""
 
@@ -264,17 +348,53 @@ Caption:"""
         returns:
         - a tuple of text extracted from the document and a list of image metadatas
         """
-        doc = docx.Document(file_path)
+        if not extract_images:
+            doc = docx.Document(file_path)
 
-        text_parts = []
-        images_metadata = []
+            text_parts = []
+            images_metadata = []
 
-        for paragraph in doc.paragraphs:
-            text_parts.append(paragraph.text)
+            for paragraph in doc.paragraphs:
+                text_parts.append(paragraph.text)
 
-        text = "\n".join(text_parts)
+            text = "\n".join(text_parts)
 
-        return text, images_metadata
+            return text, images_metadata
+        
+        # convert to PDF and handle with _load_pdf()
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as tmp_pdf:
+            pdf_path = tmp_pdf.name
+
+        try:
+            subprocess.run([
+                "libreoffice", "--headless", "--convert-to", "pdf",
+                "--outdir", os.path.dirname(pdf_path), file_path
+            ], check=True, capture_output=True)
+            
+            expected_pdf = os.path.splitext(file_path)[0] + ".pdf"
+
+            # may be placed in outdir, check if file exists
+            if not os.path.exists(expected_pdf):
+                if os.path.exists(pdf_path):
+                    # already at expected path
+                    pass
+                else:
+                    raise FileNotFoundError("PDF conversion failed")
+            else:
+                # not at expected path
+                os.replace(expected_pdf, pdf_path)
+
+            text, images_metadata = self._load_pdf(pdf_path, extract_images=True)
+            
+            for img in images_metadata:
+                img["source_file"] = os.path.basename(file_path)
+            
+            return text, images_metadata
+        
+        finally:
+            # delete temporary PDF
+            if os.path.exists(pdf_path):
+                os.unlink(pdf_path)
 
     def _load_txt(self, file_path: str) -> Tuple[str, List[Dict]]:
         """
@@ -288,68 +408,6 @@ Caption:"""
         """
         with open(file_path, 'r', encoding='utf-8') as file:
             return file.read(), []
-
-    def insert_image_captions(self, text: str, images_metadata: List[Dict]) -> str:
-        """
-        Inserts image captions into the text at appropriate positions.
-        
-        args:
-        - text (str): original text
-        - images_metadata (List[dict]): a list of image metadata dictionaries
-        
-        returns:
-        - text with image captions inserted
-        """
-        if not images_metadata:
-            return text
-        
-        # group captions by page number
-        pages_captions = {}
-        for image in images_metadata:
-            page_num = int(image.get("page_num", 1))
-            caption = image.get("caption", "")
-            if caption:
-                pages_captions.setdefault(page_num, []).append(f"[IMAGE: {caption}]")
-
-        if not pages_captions:
-            return text
-
-        max_page = max(pages_captions.keys())
-
-        # split text into pages
-        if '\f' in text:
-            pages = text.split('\f')
-            separator = '\f'
-
-        else:
-            lines = text.splitlines()
-            lines_per_page = max(1, -(-len(lines) // max_page))
-            pages = []
-
-            for i in range(max_page):
-                start = i * lines_per_page
-                end = start + lines_per_page
-                pages.append("\n".join(lines[start:end]))
-
-            # append leftover lines to last page
-            if end < len(lines):
-                pages[-1] = pages[-1] + ("\n" if pages[-1] else "") + "\n".join(lines[end:])
-
-            separator = "\n\n"
-
-        # ensure at least max_page pages
-        while len(pages) < max_page:
-            pages.append("")
-
-        # append captions to end of each page
-        for page_index in range(1, max_page + 1):
-            caps = pages_captions.get(page_index)
-            if caps:
-                addition = "\n" + "\n".join(caps)
-                pages[page_index - 1] = (pages[page_index - 1] + addition).rstrip()
-
-        new_text = separator.join(pages)
-        return new_text
 
     def chunk_text(self, text: str, source_file: str = None, images_metadata: List[Dict] = None) -> Tuple[List[str], List[Dict]]:
         """
@@ -420,10 +478,9 @@ Caption:"""
             if os.path.isfile(file_path) and os.path.splitext(filename)[1].lower() in supported_extensions:
                 try:
                     text, images_metadata = self.load_document(file_path, extract_images)
-                    text_captioned = self.insert_image_captions(text, images_metadata)
                     image_metadata_list.extend(images_metadata)
 
-                    chunks, metadatas = self.chunk_text(text_captioned, source_file=filename, images_metadata=images_metadata)
+                    chunks, metadatas = self.chunk_text(text, source_file=filename, images_metadata=images_metadata)
                     all_chunks.extend(chunks)
                     all_metadatas.extend(metadatas)
 
