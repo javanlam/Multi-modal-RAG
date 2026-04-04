@@ -9,7 +9,6 @@ from core.graph_store import GraphStorageManager
 from core.retriever import HyDERetriever
 from core.graph_retriever import GraphRetriever
 from core.generator import ResponseGenerator
-from core.generator_vlm import ResponseGeneratorVLM
 from core.image_store import ImageStore
 from models.embeddings import EmbeddingModel
 from models.multimodal_embeddings import MultimodalEmbeddingModel
@@ -28,7 +27,8 @@ class RAGSystem:
         """
         self.config = config or RAGConfig.from_env()
 
-        self.vlm_generator = ResponseGeneratorVLM(self.config) if config.generate_image_captions else None
+        self.generator = ResponseGenerator(self.config)
+        self.embedding = EmbeddingModel(self.config)
         
         if self.config.extract_images:
             self.image_store = ImageStore(self.config.image_store_dir)
@@ -36,7 +36,7 @@ class RAGSystem:
         else:
             self.image_store = None
         
-        self.document_processor = DocumentProcessor(self.config, self.vlm_generator, self.image_store)
+        self.document_processor = DocumentProcessor(self.config, self.generator, self.vlm_generator, self.image_store)
 
         self.multimodal_embedding = None
         if self.config.use_multimodal:
@@ -51,16 +51,13 @@ class RAGSystem:
 
         if self.config.retrieval_mode == "vector":
             self.vector_store = VectorStoreManager(self.config)
-            self.retriever = HyDERetriever(self.vector_store, self.config)
+            self.retriever = HyDERetriever(self.vector_store, self.config, self.generator)
 
         elif self.config.retrieval_mode == "graph":
-            self.graph_store = GraphStorageManager(self.config)
-            self.retriever = GraphRetriever(self.graph_store, self.config)
+            self.graph_store = GraphStorageManager(self.config, self.generator)
+            self.retriever = GraphRetriever(self.graph_store, self.config, self.generator)
             if not self.graph_store.load():
                 print("No existing graph found. Will build new graph when documents are ingested.")
-
-        self.generator = ResponseGenerator(self.config)
-        self.embedding = EmbeddingModel(self.config)
     
     def ingest_documents(self, source_path: str):
         """
