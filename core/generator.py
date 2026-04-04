@@ -33,17 +33,9 @@ class ResponseGenerator:
         dotenv.load_dotenv(dotenv_path=dotenv_path)
 
         if self.config.llm_provider == "openai":
-            openai.api_key = os.getenv("OPENAI_API_KEY")
-            self.llm_client = None
             self.llm = LLM_OpenAI(self.config)
 
         elif self.config.llm_provider == "openai-azure":
-            self.llm_client = openai.AzureOpenAI(
-                api_key = os.getenv("OPENAI_API_KEY"),
-                api_version = "2024-06-01",
-                azure_endpoint = "https://hkust.azure-api.net",
-                azure_deployment = self.config.llm_model
-            )
             self.llm = LLM_OpenAI_Azure(self.config)
 
         elif self.config.llm_provider == "google":
