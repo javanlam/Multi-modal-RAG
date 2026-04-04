@@ -46,7 +46,7 @@ class RAGSystem:
 
                 self.multi_vector_store = MultiVectorStoreManager(self.config)
             except Exception as e:
-                print(f"Failed to load multi‑modal embedding model: {e}")
+                print(f"Failed to load multi-modal embedding model: {e}")
                 self.config.use_multimodal = False      # prevent errors
 
         if self.config.retrieval_mode == "vector":
