@@ -17,8 +17,8 @@ class MultiVectorStoreManager:
         """
         self.config = config
         self.client = chromadb.PersistentClient(path=config.persist_directory)
-        self.image_collection = self.client._get_or_create_collection(name=config.image_embeddings_collection)
-        self.caption_collection = self.client._get_or_create_collection(name=config.caption_embeddings_collection)
+        self.image_collection = self._get_or_create_collection(name=config.image_embeddings_collection)
+        self.caption_collection = self._get_or_create_collection(name=config.caption_embeddings_collection)
 
         self.collection_name = f"{config.collection_name}_images"
         self.directory = config.persist_directory

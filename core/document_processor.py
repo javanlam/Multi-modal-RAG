@@ -142,7 +142,7 @@ class DocumentProcessor:
                 
                 # generate caption
                 caption = None
-                if self.vlm_generator:
+                if self.generator:
                     caption = self._generate_image_caption(image_data_url, context)
                 
                 image_metadata = {
@@ -213,7 +213,7 @@ class DocumentProcessor:
         returns:
         - generated caption; OR None if failed
         """
-        if not self.vlm_generator:
+        if not self.generator:
             return None
         
         try:

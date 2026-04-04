@@ -118,11 +118,12 @@ Context:
 
 Question: {query}
 
-Please provide a comprehensive answer based on the context provided.
+Please provide a comprehensive answer.
+Always trust the context over your own knowledge.
 If you find the context insufficient for answering the question, gently reject answering the question.
 
 You act as a chatbot and are having a conversation with the user.
-Provide a natural response as in a conversation.
+Provide a natural response as in a conversation; do NOT mention anything about the context in your answer.
 
 Answer:"""
         

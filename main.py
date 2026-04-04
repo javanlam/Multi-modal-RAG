@@ -36,15 +36,16 @@ class RAGSystem:
         else:
             self.image_store = None
         
-        self.document_processor = DocumentProcessor(self.config, self.generator, self.vlm_generator, self.image_store)
+        self.document_processor = DocumentProcessor(self.config, self.generator, self.image_store)
 
         self.multimodal_embedding = None
         if self.config.use_multimodal:
             try:
                 self.multimodal_embedding = MultimodalEmbeddingModel(self.config)
-                print("Multi‑modal embedding model (DINOv2+Talk2DINO) loaded.")
+                print("Multi-modal embedding model (DINOv2+Talk2DINO) loaded.")
 
                 self.multi_vector_store = MultiVectorStoreManager(self.config)
+                print("Multi-vector database loaded.")
             except Exception as e:
                 print(f"Failed to load multi-modal embedding model: {e}")
                 self.config.use_multimodal = False      # prevent errors
@@ -151,22 +152,26 @@ class RAGSystem:
                         "has_caption": img_meta.get("has_caption", False)
                     })
 
-                    caption_emb = self.embedding.encode_single(image_caption)
+                    caption_emb = self.multimodal_embedding.encode_text(image_caption)
                     caption_embeddings.append(caption_emb)
                 except Exception as e:
                     print(f"Error computing embedding for image {image_id}: {e}")
                     continue
 
             if image_ids:
-                self.multi_vector_store.add_image_batch(image_ids, image_embeddings, caption_embeddings, image_metadatas)
-                print(f"Added {len(image_ids)} image embeddings to vector store.")
+                if len(image_ids) == len(image_embeddings) == len(caption_embeddings) == len(image_metadatas):
+                    self.multi_vector_store.add_image_batch(image_ids, image_embeddings, caption_embeddings, image_metadatas)
+                    print(f"Added {len(image_ids)} image embeddings to vector store.")
+                else:
+                    self.config.use_multimodal = False
+                    print("Missing items among: (image_ids OR image_embeddings OR caption_embeddings OR image_metadatas), multimodal mode disabled.")
 
     def query(
             self, 
             question: str,
             query_images: Optional[List[str]] = None, 
             use_enhancement: bool = True, 
-            use_vlm: bool = False
+            use_vlm: bool = True
         ) -> Dict:
         """
         Processes a query and returns the generated response.
@@ -206,19 +211,23 @@ class RAGSystem:
                         by_image_result = self.multi_vector_store.search_by_image(query_img, n_results=self.config.top_k)
                         by_image_results.append(by_image_result)
 
-                if text_to_caption_results and text_to_image_results and by_image_results:
+                if text_to_caption_results:
                     retrieved_image_ids.extend(text_to_caption_results['ids'][0])
+
+                if text_to_image_results:
                     retrieved_image_ids.extend(text_to_image_results['ids'][0])
+
+                if by_image_results:
                     retrieved_image_ids.extend(by_image_result['ids'][0] for by_image_result in by_image_results)
 
-                    # remove duplicates
-                    retrieved_image_ids = list(set(retrieved_image_ids))
-                    
-                    # retrieve image URLs from image store
-                    retrieved_image_data_urls = self.image_store.get_image_data_urls(retrieved_image_ids)
-                    retrieved_has_images = len(retrieved_image_data_urls) > 0
+                # remove duplicates
+                retrieved_image_ids = list(set(retrieved_image_ids))
+                
+                # retrieve image URLs from image store
+                retrieved_image_data_urls = self.image_store.get_image_data_urls(retrieved_image_ids)
+                retrieved_has_images = len(retrieved_image_data_urls) > 0
 
-                    print(f"Retrieved {len(retrieved_image_data_urls)} images via multi-modal search")
+                print(f"Retrieved {len(retrieved_image_data_urls)} images via multi-modal search")
 
             except Exception as e:
                 print(f"Multi-modal retrieval error: {e}")
@@ -244,8 +253,8 @@ class RAGSystem:
         if context_images:
             print(f"Using {len(context_images)} images as context")
 
-        if use_vlm and self.vlm_generator and (retrieved_has_images or context_images or query_images):
-            generation_result = self.vlm_generator.generate_response(
+        if use_vlm and (retrieved_has_images or context_images or query_images):
+            generation_result = self.generator.generate_response(
                 question, 
                 context_documents=retrieval_result["documents"],
                 query_img=query_images,
@@ -296,6 +305,7 @@ if __name__ == "__main__":
     
     # ingest documents once only when first processing documents
     # rag_system.ingest_documents("./documents/")
+    # rag_system.ingest_documents("./example_notebooks/captioning_examples/sample_docs/")
     
     while True:
         question = input("\nEnter your question (or 'quit' to exit): ")
