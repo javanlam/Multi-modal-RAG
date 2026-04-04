@@ -215,13 +215,13 @@ class RAGSystem:
                     retrieved_image_ids = list(set(retrieved_image_ids))
                     
                     # retrieve image URLs from image store
-                    retrieved_image_data_urls = self.get_image_data_urls(retrieved_image_ids)
+                    retrieved_image_data_urls = self.image_store.get_image_data_urls(retrieved_image_ids)
                     retrieved_has_images = len(retrieved_image_data_urls) > 0
 
-                    print(f"Retrieved {len(retrieved_image_data_urls)} images via multi‑modal search")
+                    print(f"Retrieved {len(retrieved_image_data_urls)} images via multi-modal search")
 
             except Exception as e:
-                print(f"Multi‑modal retrieval error: {e}")
+                print(f"Multi-modal retrieval error: {e}")
 
         for doc in retrieval_result["documents"]:
             if hasattr(doc, 'metadata'):
@@ -237,7 +237,7 @@ class RAGSystem:
 
                 if image_ids and self.image_store:
                     # get data URLs for images from store
-                    chunk_image_urls = self.get_image_data_urls(image_ids)
+                    chunk_image_urls = self.image_store.get_image_data_urls(image_ids)
                     retrieved_image_data_urls.extend(chunk_image_urls)
 
         context_images = retrieved_image_data_urls
@@ -288,98 +288,6 @@ class RAGSystem:
             }
 
         return results
-    
-    def get_image_data_urls(self, image_ids: List[str]) -> List[str]:
-        """
-        Gets image data URLs for a list of image IDs.
-        
-        args:
-        - image_ids (List[str]): list of image IDs
-        
-        returns:
-        - a list of image data URLs
-        """
-        if not self.image_store:
-            return []
-        
-        data_urls = []
-        for image_id in image_ids:
-            data_url = self.image_store.get_image_data_url(image_id)
-            if data_url:
-                data_urls.append(data_url)
-        
-        return data_urls
-    
-    def search_images(self, query: str) -> List[Dict]:
-        """
-        Searches for images by caption or context.
-        
-        args:
-        - query (str): search query
-        
-        returns:
-        - a list of image metadata dictionaries
-        """
-        if not self.image_store:
-            print("Image store not initialized. Set extract_images=True in config.")
-
-            return []
-        
-        return self.image_store.search_images_by_caption(query)
-    
-    def get_document_images(self, document_name: str) -> List[Dict]:
-        """
-        Gets all images from a specific document.
-        
-        args:
-        - document_name (str): name of the document
-        
-        returns:
-        - list of image metadata dictionaries
-        """
-        if not self.image_store:
-            print("Image store not initialized. Set extract_images=True in config.")
-
-            return []
-        
-        return self.image_store.get_images_by_document(document_name)
-    
-    def get_image_store_stats(self) -> Dict:
-        """
-        Gets image store statistics.
-        
-        returns:
-        - a dictionary with image store statistics
-        """
-        if not self.image_store:
-            return {"error": "Image store not initialized"}
-        
-        return self.image_store.get_stats()
-    
-    def _extract_images_from_retrieved_chunks(self, retrieved_chunks: List) -> List[str]:
-        """
-        Extracts image data URLs from retrieved chunks.
-        
-        args:
-        - retrieved_chunks (List): list of retrieved documents/chunks
-        
-        returns:
-        - list of image data URLs
-        """
-        image_data_urls = []
-        
-        for chunk in retrieved_chunks:
-            # check if chunk has metadata with image information
-            if hasattr(chunk, 'metadata'):
-                metadata = chunk.metadata
-
-                if metadata.get("has_images", False) and "images" in metadata:
-                    # get the image data URL
-                    for img_info in metadata["images"]:
-                        # temporary placeholder
-                        pass
-        
-        return image_data_urls
 
 
 if __name__ == "__main__":

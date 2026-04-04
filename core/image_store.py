@@ -203,6 +203,24 @@ class ImageStore:
         - a list of image metadata dictionaries
         """
         return [self.get_image(img_id) for img_id in image_ids if self.get_image(img_id)]
+
+    def get_image_data_urls(self, image_ids: List[str]) -> List[str]:
+        """
+        Gets image data URLs for a list of image IDs.
+        
+        args:
+        - image_ids (List[str]): list of image IDs
+        
+        returns:
+        - a list of image data URLs
+        """
+        data_urls = []
+        for image_id in image_ids:
+            data_url = self.get_image_data_url(image_id)
+            if data_url:
+                data_urls.append(data_url)
+        
+        return data_urls
     
     def search_images_by_caption(self, query: str) -> List[Dict]:
         """
