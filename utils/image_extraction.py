@@ -4,7 +4,7 @@ import fitz
 import os
 from PIL import Image
 from io import BytesIO
-from typing import List, Dict
+from typing import List, Dict, Tuple
 
 
 def local_image_to_data_url(image_path: str) -> str:
@@ -29,6 +29,27 @@ def local_image_to_data_url(image_path: str) -> str:
 
     # construct the data URL
     return f"data:{mime_type};base64,{base64_encoded_data}"
+
+
+def data_url_to_bytes(data_url: str) -> Tuple[bytes, str]:
+    """
+    Converts an image data URL to a byte array.
+
+    args:
+    - data_url (str): the image data URL
+
+    returns:
+    - a tuple containing the byte array of the image and the MIME type
+    """
+    if not data_url.startswith("data:image/"):
+        raise ValueError("Invalid image data URL")
+    
+    header, encoded = data_url.split(",", 1)
+    mime_type = header.split(":")[1].split(";")[0]
+    
+    image_bytes = base64.b64decode(encoded)
+
+    return image_bytes, mime_type
 
 
 def data_url_to_pil(data_url: str) -> Image.Image:
