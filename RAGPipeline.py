@@ -48,11 +48,12 @@ class RAGSystem:
                 print("Multi-vector database loaded.")
             except Exception as e:
                 print(f"Failed to load multi-modal embedding model: {e}")
+                self.multi_vector_store = None
                 self.config.use_multimodal = False      # prevent errors
 
         if self.config.retrieval_mode == "vector":
             self.vector_store = VectorStoreManager(self.config)
-            self.retriever = HyDERetriever(self.vector_store, self.config, self.generator)
+            self.retriever = HyDERetriever(self.vector_store, self.config, self.generator, self.image_store, self.multi_vector_store)
 
         elif self.config.retrieval_mode == "graph":
             self.graph_store = GraphStorageManager(self.config, self.generator)
@@ -189,48 +190,14 @@ class RAGSystem:
         retrieval_result = self.retriever.retrieve(question, use_enhancement)
 
         # multimodal retrieval
-        retrieved_image_ids = []
         retrieved_image_data_urls = []
         retrieved_has_images = False
 
         if self.config.use_multimodal and self.multimodal_embedding and self.multi_vector_store:
-            try:
-                # search by text
-                query_emb_text = self.multimodal_embedding.encode_query(text=question)
-                text_to_caption_results, text_to_image_results = self.multi_vector_store.search_by_caption(query_emb_text, n_results=self.config.top_k)
+            retrieved_image_data_urls = self.retriever.retrieve_multimodal(query=question, query_images=query_images)
 
-                # search by images (if any)
-                query_emb_imgs = []
-                by_image_results = []
-                
-                if query_images:
-                    query_emb_img = self.multimodal_embedding.encode_query(image_data_url=query_images[0])
-                    query_emb_imgs.append(query_emb_img)
-
-                    for query_img in query_emb_imgs:
-                        by_image_result = self.multi_vector_store.search_by_image(query_img, n_results=self.config.top_k)
-                        by_image_results.append(by_image_result)
-
-                if text_to_caption_results:
-                    retrieved_image_ids.extend(text_to_caption_results['ids'][0])
-
-                if text_to_image_results:
-                    retrieved_image_ids.extend(text_to_image_results['ids'][0])
-
-                if by_image_results:
-                    retrieved_image_ids.extend(by_image_result['ids'][0] for by_image_result in by_image_results)
-
-                # remove duplicates
-                retrieved_image_ids = list(set(retrieved_image_ids))
-                
-                # retrieve image URLs from image store
-                retrieved_image_data_urls = self.image_store.get_image_data_urls(retrieved_image_ids)
-                retrieved_has_images = len(retrieved_image_data_urls) > 0
-
-                print(f"Retrieved {len(retrieved_image_data_urls)} images via multi-modal search")
-
-            except Exception as e:
-                print(f"Multi-modal retrieval error: {e}")
+            if len(retrieved_image_data_urls) > 0:
+                retrieved_has_images = True
 
         for doc in retrieval_result["documents"]:
             if hasattr(doc, 'metadata'):
