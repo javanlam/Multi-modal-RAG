@@ -305,7 +305,6 @@ if __name__ == "__main__":
     
     # ingest documents once only when first processing documents
     # rag_system.ingest_documents("./documents/")
-    # rag_system.ingest_documents("./example_notebooks/captioning_examples/sample_docs/")
     
     while True:
         question = input("\nEnter your question (or 'quit' to exit): ")
