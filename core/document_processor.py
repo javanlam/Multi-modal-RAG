@@ -92,6 +92,7 @@ class DocumentProcessor:
 
         doc.close()
         full_text = "\n".join(page_texts).rstrip("\f")
+
         return full_text, all_images_metadata
 
     def _get_sorted_page_items(self, page: fitz.Page, extract_images: bool) -> List[Dict]:
@@ -441,12 +442,14 @@ Caption:"""
             if images_metadata and has_image:
                 for img_meta in images_metadata:
                     img_caption = img_meta.get("caption", "")
+                    img_id = img_meta.get("image_id")
 
                     if img_caption and img_caption in chunk:
                         metadata["images"].append({
                             "caption": img_caption,
                             "page": img_meta.get("page_num"),
-                            "has_caption": img_meta.get("has_caption", False)
+                            "has_caption": img_meta.get("has_caption", False),
+                            "image_id": img_id
                         })
 
             metadata["images"] = json.dumps(metadata["images"])     # lists cannot be stored in ChromaDB

@@ -83,6 +83,11 @@ class ImageStore:
             # extract image data from data URL
             header, data = image_data_url.split(",", 1)
             image_bytes = base64.b64decode(data)
+
+            if len(image_bytes) < 1024:
+                # smaller than 1KB, ignore due to possible misclassified document part as image
+                print(f"{image_id}: File size unusually small ({len(image_bytes)} bytes), ignored")
+                return None
             
             # determine file extension from mime type
             mime_type = header.split(";")[0].split(":")[1]
