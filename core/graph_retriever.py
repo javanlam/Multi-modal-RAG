@@ -19,7 +19,8 @@ class GraphRetriever:
             config: RAGConfig, 
             generator: ResponseGenerator,
             image_store: ImageStore,
-            multi_vector_store: MultiVectorStoreManager
+            multi_vector_store: MultiVectorStoreManager,
+            multimodal_embedding: MultimodalEmbeddingModel
         ):
         """
         Initializes an instance of the graph retriever with configurations provided.
@@ -28,13 +29,16 @@ class GraphRetriever:
         - graph_store (GraphStorageManager): an instance of the graph storage manager
         - config (RAGConfig): an instance of the data class for configuration settings
         - generator (ResponseGenerator): generator to obtain enhanced query
+        - image_store (ImageStore): storage of extracted imgaes
+        - multi_vector_store (MultiVectorStoreManager): multi-vector database of image feature and caption embeddings
+        - multimodal_embedding (MultimodalEmbeddingModel): multimodal embedding model
         """
         self.graph_store = graph_store
         self.config = config
         self.generator = generator
-        self.multimodal_embedding = MultimodalEmbeddingModel(self.config)
         self.image_store = image_store
         self.multi_vector_store = multi_vector_store
+        self.multimodal_embedding = multimodal_embedding
     
     def _classify_question_type(self, question: str) -> str:
         """

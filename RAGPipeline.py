@@ -31,7 +31,7 @@ class RAGSystem:
         self.embedding = EmbeddingModel(self.config)
         
         if self.config.extract_images:
-            self.image_store = ImageStore(self.config.image_store_dir)
+            self.image_store = ImageStore(self.config, self.config.image_store_dir)
             print(f"Image store initialized at: {self.config.image_store_dir}")
         else:
             self.image_store = None
@@ -39,6 +39,7 @@ class RAGSystem:
         self.document_processor = DocumentProcessor(self.config, self.generator, self.image_store)
 
         self.multimodal_embedding = None
+        self.multi_vector_store = None
         if self.config.use_multimodal:
             try:
                 self.multimodal_embedding = MultimodalEmbeddingModel(self.config)
@@ -53,11 +54,11 @@ class RAGSystem:
 
         if self.config.retrieval_mode == "vector":
             self.vector_store = VectorStoreManager(self.config)
-            self.retriever = HyDERetriever(self.vector_store, self.config, self.generator, self.image_store, self.multi_vector_store)
+            self.retriever = HyDERetriever(self.vector_store, self.config, self.embedding, self.generator, self.image_store, self.multi_vector_store, self.multimodal_embedding)
 
         elif self.config.retrieval_mode == "graph":
-            self.graph_store = GraphStorageManager(self.config, self.generator)
-            self.retriever = GraphRetriever(self.graph_store, self.config, self.generator)
+            self.graph_store = GraphStorageManager(self.config, self.generator, self.embedding)
+            self.retriever = GraphRetriever(self.graph_store, self.config, self.generator, self.image_store, self.multi_vector_store, self.multimodal_embedding)
             if not self.graph_store.load():
                 print("No existing graph found. Will build new graph when documents are ingested.")
     

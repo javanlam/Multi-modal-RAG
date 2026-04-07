@@ -57,17 +57,18 @@ class GraphStorageManager:
     Manages graph-based storage and retrieval using knowledge graphs.
     """
     
-    def __init__(self, config: RAGConfig, generator: ResponseGenerator):
+    def __init__(self, config: RAGConfig, generator: ResponseGenerator, embedding: EmbeddingModel):
         """
         Initializes an instance of the graph storage manager class for graph structures and storage paths.
 
         args:
         - config (RAGConfig): an instance of the data class for configuration settings
         - generator (ResponseGenerator): generator to process text chunks
+        - embedding (EmbeddingModel): text embedding model
         """
         self.config = config
         self.generator = generator
-        self.embedding = EmbeddingModel(config=config)
+        self.embedding = embedding
         self.graph = nx.Graph()
         self.entities = {}                                  # maps entity ids to EntityNode objects
         self.relationships = []                             # a list of RelationshipEdge objects
@@ -75,7 +76,7 @@ class GraphStorageManager:
         self.community_summaries = {}                       # maps community ids to community summaries
         self.community_summary_embeddings = {}              # maps community ids to vector embeddings of community summaries
         self.chunk_to_entities = {}                         # maps chunk ids to lists of entity ids
-        self.persist_path = config.graph_persist_directory
+        self.persist_path = f"{self.config.graph_persist_directory}/{self.config.collection_name}"
 
         os.makedirs(self.persist_path, exist_ok=True)       # creates directory for graph storage
 

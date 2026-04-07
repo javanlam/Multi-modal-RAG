@@ -4,6 +4,7 @@ import base64
 from typing import List, Dict, Optional
 import hashlib
 from datetime import datetime
+from config.settings import RAGConfig
 
 
 class ImageStore:
@@ -11,14 +12,16 @@ class ImageStore:
     Stores and manages extracted images from documents.
     """
     
-    def __init__(self, storage_dir: str = "./image_store"):
+    def __init__(self, config: RAGConfig, storage_dir: str = "./image_store"):
         """
         Initializes the image store.
         
         args:
+        - config (RAGConfig): an instance of the data class for configuration settings
         - storage_dir (str): directory to store images and metadata
         """
-        self.storage_dir = storage_dir
+        self.config = config
+        self.storage_dir = f"{storage_dir}/{self.config.collection_name}"
         self.metadata_file = os.path.join(storage_dir, "metadata.json")
         self.images_dir = os.path.join(storage_dir, "images")
         

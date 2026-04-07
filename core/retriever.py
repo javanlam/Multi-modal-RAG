@@ -18,9 +18,11 @@ class HyDERetriever:
             self, 
             vector_store: VectorStoreManager, 
             config: RAGConfig, 
+            embedding: EmbeddingModel,
             generator: ResponseGenerator, 
             image_store: ImageStore,
-            multi_vector_store: MultiVectorStoreManager
+            multi_vector_store: MultiVectorStoreManager,
+            multimodal_embedding: MultimodalEmbeddingModel
         ):
         """
         Initializes an instance of the retriever with configurations provided.
@@ -28,15 +30,17 @@ class HyDERetriever:
         args:
         - vector_store (VectorStoreManager): a VectorStoreManager object that acts as the external knowledge base
         - config (RAGConfig): an instance of the data class for configuration settings
+        - embedding (EmbeddingModel): text embedding model
         - generator (ResponseGenerator): generator to obtain enhanced query
         - image_store (ImageStore): image store object to retrieve from
         - multi_vector_store (MultiVectorStoreManager): multi-vector database containing embedded images and captions
+        - multimodal_embedding (MultimodalEmbeddingModel): multimodal embedding model
         """
         self.vector_store = vector_store
         self.config = config
-        self.embedding_model = EmbeddingModel(self.config)
+        self.embedding_model = embedding
         self.generator = generator
-        self.multimodal_embedding = MultimodalEmbeddingModel(self.config)
+        self.multimodal_embedding = multimodal_embedding
         self.image_store = image_store
         self.multi_vector_store = multi_vector_store
 
