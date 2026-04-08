@@ -75,8 +75,6 @@ class RAGSystem:
                 source_path, 
                 extract_images=self.config.extract_images
             )
-
-            text_with_captions = self.document_processor.insert_image_captions(text, images_metadata)
             
             # store extracted images 
             stored_image_ids = []
@@ -95,7 +93,7 @@ class RAGSystem:
                 print(f"Stored {len(images_metadata)} images from {os.path.basename(source_path)}")
 
             chunks, metadatas = self.document_processor.chunk_text(
-                text_with_captions, 
+                text, 
                 source_file=os.path.basename(source_path), 
                 images_metadata=images_metadata
             )
@@ -117,14 +115,14 @@ class RAGSystem:
 
         if self.config.retrieval_mode == "vector":
             batch_size = 32
-            embeddings = []
 
             for i in range(0, len(chunks), batch_size):
                 batch = chunks[i:i+batch_size]
                 batch_embeddings = self.embedding.encode(batch)
-                embeddings.extend(batch_embeddings)
+                batch_metadatas = metadatas[i:i+batch_size]
 
-            self.vector_store.add_documents(chunks, embeddings, metadatas)
+                self.vector_store.add_documents(batch, batch_embeddings, batch_metadatas)
+                
             print(f"Ingested {len(chunks)} document chunks")
 
             chunks_with_images = sum(1 for meta in metadatas if meta.get("has_images", False))
@@ -171,7 +169,8 @@ class RAGSystem:
                         "caption": image_caption,
                         "source_file": img_meta.get("source_file", "unknown"),
                         "page_num": img_meta.get("page_num", 0),
-                        "has_caption": img_meta.get("has_caption", False)
+                        "has_caption": img_meta.get("has_caption", False),
+                        "data_url": data_url
                     })
 
                     caption_emb = self.multimodal_embedding.encode_text(image_caption)
@@ -182,7 +181,16 @@ class RAGSystem:
 
             if image_ids:
                 if len(image_ids) == len(image_embeddings) == len(caption_embeddings) == len(image_metadatas):
-                    self.multi_vector_store.add_image_batch(image_ids, image_embeddings, caption_embeddings, image_metadatas)
+                    batch_size = 32
+
+                    for i in range(0, len(image_ids), batch_size):
+                        batch_ids = image_ids[i:i+batch_size]
+                        batch_image_embeddings = image_embeddings[i:i+batch_size]
+                        batch_caption_embeddings = caption_embeddings[i:i+batch_size]
+                        batch_image_metadatas = image_metadatas[i:i+batch_size]
+
+                        self.multi_vector_store.add_image_batch(batch_ids, batch_image_embeddings, batch_caption_embeddings, batch_image_metadatas)
+
                     print(f"Added {len(image_ids)} image embeddings to vector store.")
                 else:
                     self.config.use_multimodal = False
