@@ -194,6 +194,8 @@ class RAGSystem:
         retrieved_image_data_urls = []
         retrieved_has_images = False
 
+        context_images = []
+
         if self.config.use_multimodal and self.multimodal_embedding and self.multi_vector_store:
             retrieved_image_data_urls = self.retriever.retrieve_multimodal(query=question, query_images=query_images)
 
@@ -217,11 +219,11 @@ class RAGSystem:
                     chunk_image_urls = self.image_store.get_image_data_urls(image_ids)
                     retrieved_image_data_urls.extend(chunk_image_urls)
 
-        context_images = retrieved_image_data_urls
-        if context_images:
-            print(f"Using {len(context_images)} images as context")
-
         if use_vlm and (retrieved_has_images or context_images or query_images):
+            context_images = retrieved_image_data_urls
+            if context_images:
+                print(f"Using {len(context_images)} images as context")
+            
             generation_result = self.generator.generate_response(
                 question, 
                 context_documents=retrieval_result["documents"],
@@ -242,6 +244,7 @@ class RAGSystem:
             "answer": generation_result["answer"],
             "retrieval_mode": self.config.retrieval_mode,
             "source_documents": retrieval_result["documents"],
+            "context_images": context_images,
             "retrieval_metadata": {
                 "documents_retrieved": len(retrieval_result["documents"]),
                 "enhancement_used": use_enhancement,
