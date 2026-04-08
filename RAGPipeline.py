@@ -1,5 +1,6 @@
 import os
 import base64
+import pickle
 from typing import Dict, List, Tuple, Optional
 from config.settings import RAGConfig
 from core.document_processor import DocumentProcessor
@@ -99,11 +100,30 @@ class RAGSystem:
                 images_metadata=images_metadata
             )
 
+            with open("./cache/chunks.pkl", "wb") as f:
+                pickle.dump(chunks, f)
+            with open("./cache/metadatas.pkl", "wb") as f:
+                pickle.dump(metadatas, f)
+
         else:                                   # processes a directory
             chunks, metadatas, images_metadata = self.document_processor.process_directory(source_path, self.config.extract_images)
 
+            with open("./cache/chunks.pkl", "wb") as f:
+                pickle.dump(chunks, f)
+            with open("./cache/metadatas.pkl", "wb") as f:
+                pickle.dump(metadatas, f)
+            with open("./cache/images_metadata.pkl", "wb") as f:
+                pickle.dump(images_metadata, f)
+
         if self.config.retrieval_mode == "vector":
-            embeddings = self.embedding.encode(chunks)
+            batch_size = 32
+            embeddings = []
+
+            for i in range(0, len(chunks), batch_size):
+                batch = chunks[i:i+batch_size]
+                batch_embeddings = self.embedding.encode(batch)
+                embeddings.extend(batch_embeddings)
+
             self.vector_store.add_documents(chunks, embeddings, metadatas)
             print(f"Ingested {len(chunks)} document chunks")
 
