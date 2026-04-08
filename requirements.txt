@@ -1,4 +1,5 @@
 chromadb>=0.4.0
+ftfy
 sentence-transformers>=2.2.0
 openai>=1.0.0
 PyMuPDF
@@ -10,3 +11,33 @@ networkx>=3.0
 transformers<5.0.0
 google-generativeai
 dashscope
+Pillow>=9.0.0
+pytest>=7.0.0
+
+# for DINOv2
+--extra-index-url https://download.pytorch.org/whl/cu117
+torch
+torchvision
+omegaconf
+torchmetrics==0.10.3
+fvcore
+iopath
+xformers
+submitit
+--extra-index-url https://pypi.nvidia.com
+cuml-cu11
+
+# for Talk2DINO
+matplotlib
+opencv-python
+pyyaml
+requests
+scikit-image
+tqdm
+einops
+timm
+webdataset
+numpy==1.26.4
+
+# for CLIP/Long-CLIP and Talk2DINO
+git+https://github.com/openai/CLIP.git
