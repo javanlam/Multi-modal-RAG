@@ -1,6 +1,7 @@
 import os
 import base64
 import pickle
+from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 from config.settings import RAGConfig
 from core.document_processor import DocumentProcessor
@@ -98,6 +99,12 @@ class RAGSystem:
                 images_metadata=images_metadata
             )
 
+            path_chunks = Path("./cache/chunks.pkl")
+            path_chunks.parent.mkdir(parents=True, exist_ok=True)
+
+            path_metadatas = Path("./cache/metadatas.pkl")
+            path_metadatas.parent.mkdir(parents=True, exist_ok=True)
+
             with open("./cache/chunks.pkl", "wb") as f:
                 pickle.dump(chunks, f)
             with open("./cache/metadatas.pkl", "wb") as f:
@@ -105,6 +112,15 @@ class RAGSystem:
 
         else:                                   # processes a directory
             chunks, metadatas, images_metadata = self.document_processor.process_directory(source_path, self.config.extract_images)
+
+            path_chunks = Path("./cache/chunks.pkl")
+            path_chunks.parent.mkdir(parents=True, exist_ok=True)
+
+            path_metadatas = Path("./cache/metadatas.pkl")
+            path_metadatas.parent.mkdir(parents=True, exist_ok=True)
+
+            path_images_metadata = Path("./cache/images_metadata.pkl")
+            path_images_metadata.parent.mkdir(parents=True, exist_ok=True)
 
             with open("./cache/chunks.pkl", "wb") as f:
                 pickle.dump(chunks, f)
