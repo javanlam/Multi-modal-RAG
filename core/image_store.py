@@ -1,4 +1,5 @@
 import json
+import ijson
 import os
 import base64
 from typing import List, Dict, Optional
@@ -22,8 +23,8 @@ class ImageStore:
         """
         self.config = config
         self.storage_dir = f"{storage_dir}/{self.config.collection_name}"
-        self.metadata_file = os.path.join(storage_dir, "metadata.json")
-        self.images_dir = os.path.join(storage_dir, "images")
+        self.metadata_file = os.path.join(self.storage_dir, "metadata.json")
+        self.images_dir = os.path.join(self.storage_dir, "images")
         
         os.makedirs(storage_dir, exist_ok=True)
         os.makedirs(self.images_dir, exist_ok=True)
@@ -39,8 +40,19 @@ class ImageStore:
         """
         if os.path.exists(self.metadata_file):
             try:
-                with open(self.metadata_file, 'r') as f:
-                    return json.load(f)
+                metadata = {
+                    "images": {},
+                    "documents": {}, 
+                    "stats": {"total_images": 0}
+                }
+
+                with open(self.metadata_file, 'rb') as f:
+                    for key, value in ijson.kvitems(f, ''):
+                        # use ijson to prevent memory crashes
+                        metadata[key] = value
+                
+                return metadata
+
             except json.JSONDecodeError:
                 print(f"Warning: Could not parse {self.metadata_file}. Creating new metadata.")
         
