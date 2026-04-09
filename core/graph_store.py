@@ -103,7 +103,7 @@ class GraphStorageManager:
                 response_output = response.get("answer", "Error generating response.")
 
                 if "Error generating response" in response_output:
-                    print("An error occurred in extracting entities and relationships.")
+                    print(f"An error occurred in extracting entities and relationships: {response_output}")
                     continue
                 
                 parsed_response = self._parse_extraction_response(response_text=response_output)
@@ -404,7 +404,7 @@ Provide a concise summary that captures the main themes and relationships within
         data_json = {
             "entities": {eid: {"name": ent.name, "description": ent.description} for eid, ent in self.entities.items()},
             "communities": self.communities,
-            "community_summaries": self.communities
+            "community_summaries": self.community_summaries
         }
 
         # save in JSON format for readability

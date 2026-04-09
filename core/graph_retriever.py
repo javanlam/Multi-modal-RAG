@@ -129,61 +129,29 @@ Hypothetical Document:
         returns:
         - a dictionary containing retrieved documents and retrieval metadata
         """
-        question_type = self._classify_question_type(question=question)
-
-        if question_type == "global":
-            if use_enhancement:
-                question_enhanced = self._enhance_query(query=question)
-            else:
-                question_enhanced = question
-
-            results = self.graph_store.search_global_question(question=question_enhanced)
-
-            context_docs = []
-            for community in results["communities"]:
-                context_docs.append(
-                    f"Community {community['community_id']}: {community['community_summary']}\n"
-                    f"Key entities: {', '.join(community['entities'])}"
-                )
-
-            retrieval_results = {
-                "documents": context_docs,
-                "original_query": question,
-                "enhanced_query": question_enhanced,
-                "question_type": "global",
-                "metadata": results
-            }
-
-            return retrieval_results
-
+        if use_enhancement:
+            question_enhanced = self._enhance_query(query=question)
         else:
-            results = self.graph_store.search_by_entity(query=question)
+            question_enhanced = question
 
-            context_docs = []
+        results = self.graph_store.search_global_question(question=question_enhanced)
 
-            for entity in results["matching_entities"][:3]:
-                context_docs.append(
-                    f"Entity: {entity['name']}\n"
-                    f"Description: {entity['description']}\n"
-                    f"Connections: {entity['degree']} relationships"
-                )
+        context_docs = []
+        for community in results["communities"]:
+            context_docs.append(
+                f"""Community {community['community_id']}: {community['community_summary']}\nKey entities: {', '.join(community['entities'])}"""
+            )
 
-            for community in results["relevant_communities"]:
-                context_docs.append(
-                    f"Related Community: {community['summary']}\n"
-                    f"Example entities: {', '.join(community['entities'])}"
-                )
+        retrieval_results = {
+            "documents": context_docs,
+            "original_query": question,
+            "enhanced_query": question_enhanced,
+            "question_type": "global",
+            "metadata": results
+        }
 
-            retrieval_results = {
-                "documents": context_docs,
-                "original_query": question,
-                "enhanced_query": question,
-                "question_type": "entity",
-                "metadata": results
-            }
+        return retrieval_results
 
-            return retrieval_results
-        
     def retrieve_multimodal(self, query: str, query_images: Optional[List[str]]) -> List[str]:
         """
         Retrieves relevant images.
