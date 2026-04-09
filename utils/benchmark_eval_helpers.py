@@ -211,7 +211,7 @@ def grade_with_llm_judge(
         results.append({
             'id': resp.get('id', ''),
             'question': question,
-            'student_answer': generated_answer,
+            'generated_answer': generated_answer,
             'ground_truths': ground_truths,
             'correct': judgment['correct'],
             'explanation': judgment['explanation'],
