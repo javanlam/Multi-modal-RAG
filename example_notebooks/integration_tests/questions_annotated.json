@@ -1,0 +1,57 @@
+[
+    {
+        "idx": 0,
+        "question": "What colors have been used on the livery of Fuxing trains?",
+        "answers": ["Blue and white/silver (non-standard)", "Red/orange, brown and white/silver", "Red and silver", "Blue and purple (Asian games special livery)", "Green (on CR200J)"]
+    },
+    {
+        "idx": 1,
+        "question": "What is the CR450 and what is special about it?",
+        "answers": "The CR450 is the newest generation of high-speed trains in China. During testing, the CR450 train ran at 453 km/h during testing, with a relative velocity of 891 km/h among two trains passing each other, setting a new world record."
+    },
+    {
+        "idx": 2,
+        "question": "On which railway lines does the Fuxing train CR400 operate?",
+        "answers": ["Beijing–Shanghai High-speed Rail (HSR)", "Beijing–Guangzhou–Shenzhen–Hong Kong High-speed Rail (HSR)", "Beijing–Tianjin ICR", "Xuzhou–Lanzhou High-speed Rail (HSR)", "Shanghai–Kunming High-speed Rail (HSR)", "Guangzhou–Zhuhai ICR", "Guiyang–Guangzhou High-speed Rail (HSR)", "Jinan–Qingdao High-speed Rail (HSR)", "Jakarta–Bandung Whoosh High-speed Rail (HSR)", "Hangzhou–Fuzhou–Shenzhen railway"]
+    },
+    {
+        "idx": 3,
+        "question": "What colors are the Hexie trains in?",
+        "answers": ["Blue and white", "White with a blue line"]
+    },
+    {
+        "idx": 4,
+        "question": "How many seats does the engineer's compartment on the CRH3 have?",
+        "answers": "6"
+    },
+    {
+        "idx": 5,
+        "question": "What is the front of the CRH1 train like?",
+        "answers": "The CRH1 has a distinctive, aerodynamic blunt-nose design in white with a prominent black panel displaying the \"CRH\" logo between two integrated headlights."
+    },
+    {
+        "idx": 6,
+        "question": "What is the colour scheme of the interior of the MTR CRRC Changchun train (also known as TML C-Train)?",
+        "answers": ["White, yellow, red", "White walls and doors, red seats, yellow handrails"]
+    },
+    {
+        "idx": 7,
+        "question": "Why is the MTR CRRC Changchun EMU (TML C-Train) compared to the SP1900, and what differences do these two trains have in terms of appearance and interior?",
+        "answers": "The MTR CRRC Changchun EMU (TML C-Train) is nicknamed \"pseudo-SP1900\" due to similar exterior appearance to that of the SP1900. Notable differences include both cab ends, and a refreshed interior layout, featuring dynamic route map displays, 3-seater seats, and larger LCD TVs."
+    },
+    {
+        "idx": 8,
+        "question": "Where were the MTR CRRC Changchun EMU (TML C-Train) trainsets built? When did the trainsets fully enter service?",
+        "answers": "The MTR CRRC Changchun EMU (TML C-Train) trainsets were built in Changchun, Jilin, China between 2015 and 2018. These trains entered service on the Ma On Shan Line in March 2017 and the West Rail Line in March 2020."
+    },
+    {
+        "idx": 9,
+        "question": "What quantitative differences do first-class carriages of the SP1900 train have as compared to other carriages?",
+        "answers": ["First class carriages allow 72 seated and 144 standing, while standard carriages allow 52 seated and 286 standing.", "First class carriages feature purple seats, while standard carriages feature red and silver seats.", "First class compartments have two doors on the sides, while standard carriages have five doors.", "First class carriages feature a yellow strip above the doors and windows on both sides."]
+    },
+    {
+        "idx": 10,
+        "question": "What major incidents have happened to SP1900 trains?",
+        "answers": "On February 14, 2007, a southbound SP1900 train suffered a major failure inside the Tai Lam Tunnel when a roof-mounted transformer exploded due to internal manufacturing flaws and a power surge, causing a fire that cut all traction power and forced approximately 650 passengers to evacuate through the dark, 5.5-kilometer tunnel in an incident that left 11 people hospitalized."
+    }
+]

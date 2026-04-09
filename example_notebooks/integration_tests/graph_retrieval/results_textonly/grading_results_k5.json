@@ -1,0 +1,134 @@
+{
+  "accuracy": 0.18181818181818182,
+  "correct_count": 2,
+  "total_count": 11,
+  "detailed_results": [
+    {
+      "id": 0,
+      "question": "What colors have been used on the livery of Fuxing trains?",
+      "generated_answer": "I'm sorry, but the information provided does not include details about the colors used on the livery of Fuxing trains. If you have any other questions about the trains or related topics, feel free to ask!",
+      "ground_truths": [
+        "Blue and white/silver (non-standard)",
+        "Red/orange, brown and white/silver",
+        "Red and silver",
+        "Blue and purple (Asian games special livery)",
+        "Green (on CR200J)"
+      ],
+      "correct": false,
+      "explanation": "The generated answer does not provide any information about the colors used on the livery of Fuxing trains, while the ground truth contains specific color details.",
+      "raw_judge_response": "INCORRECT: The generated answer does not provide any information about the colors used on the livery of Fuxing trains, while the ground truth contains specific color details."
+    },
+    {
+      "id": 1,
+      "question": "What is the CR450 and what is special about it?",
+      "generated_answer": "The CR450 is a series of high-speed trains developed under the China Railway 450 Technology Innovation Project, which is part of China's focus on advancing railway technology as outlined in their fourteenth five-year plan. What makes the CR450 special is its incorporation of innovative technologies like carbon ceramic braking, eddy current braking, and permanent magnet traction systems, which significantly enhance its performance and efficiency.\n\nAdditionally, the CR450 series includes models like the CR450AF and CR450BF, with the latter being a prototype of the former, showcasing the continual evolution of train technology. The operational capabilities of the CR450 are exemplified by its application in significant infrastructure projects, such as the Meizhou Bay cross-sea bridge. Overall, the CR450 represents a concerted effort to improve railway transportation in terms of speed, safety, and sustainability.",
+      "ground_truths": "The CR450 is the newest generation of high-speed trains in China. During testing, the CR450 train ran at 453 km/h during testing, with a relative velocity of 891 km/h among two trains passing each other, setting a new world record.",
+      "correct": true,
+      "explanation": "The generated answer accurately describes the CR450, including its development, innovative technologies, and models, matching the factual content related to high-speed trains in China found in the ground truth answer.",
+      "raw_judge_response": "CORRECT: The generated answer accurately describes the CR450, including its development, innovative technologies, and models, matching the factual content related to high-speed trains in China found in the ground truth answer."
+    },
+    {
+      "id": 2,
+      "question": "On which railway lines does the Fuxing train CR400 operate?",
+      "generated_answer": "The Fuxing train CR400 operates primarily on the Beijing–Shanghai high-speed railway. This route is a key corridor in China's high-speed rail network, showcasing the advanced capabilities of the CR400 series. Additionally, the CR400AF specifically has notable operational routes including its arrival at Shanghai Hongqiao railway station and departure from Beijing South railway station.",
+      "ground_truths": [
+        "Beijing–Shanghai High-speed Rail (HSR)",
+        "Beijing–Guangzhou–Shenzhen–Hong Kong High-speed Rail (HSR)",
+        "Beijing–Tianjin ICR",
+        "Xuzhou–Lanzhou High-speed Rail (HSR)",
+        "Shanghai–Kunming High-speed Rail (HSR)",
+        "Guangzhou–Zhuhai ICR",
+        "Guiyang–Guangzhou High-speed Rail (HSR)",
+        "Jinan–Qingdao High-speed Rail (HSR)",
+        "Jakarta–Bandung Whoosh High-speed Rail (HSR)",
+        "Hangzhou–Fuzhou–Shenzhen railway"
+      ],
+      "correct": true,
+      "explanation": "The generated answer correctly identifies the Beijing–Shanghai high-speed railway as a primary route for the Fuxing train CR400, which is included in the ground truth answers.",
+      "raw_judge_response": "CORRECT: The generated answer correctly identifies the Beijing–Shanghai high-speed railway as a primary route for the Fuxing train CR400, which is included in the ground truth answers."
+    },
+    {
+      "id": 3,
+      "question": "What colors are the Hexie trains in?",
+      "generated_answer": "I'm sorry, but the context provided doesn't specify the colors of the Hexie trains. If you have another question or need information on a different topic, feel free to ask!",
+      "ground_truths": [
+        "Blue and white",
+        "White with a blue line"
+      ],
+      "correct": false,
+      "explanation": "The generated answer does not provide any information regarding the colors of the Hexie trains and fails to mention \"blue and white\" or \"white with a blue line,\" which are included in the ground truth answers.",
+      "raw_judge_response": "INCORRECT: The generated answer does not provide any information regarding the colors of the Hexie trains and fails to mention \"blue and white\" or \"white with a blue line,\" which are included in the ground truth answers."
+    },
+    {
+      "id": 4,
+      "question": "How many seats does the engineer's compartment on the CRH3 have?",
+      "generated_answer": "I'm sorry, but I don't have the information regarding the number of seats in the engineer's compartment on the CRH3. If you have other questions or need details on different aspects of high-speed trains, feel free to ask!",
+      "ground_truths": "6",
+      "correct": false,
+      "explanation": "The generated answer does not provide any factual information regarding the number of seats in the engineer's compartment on the CRH3 and does not match the ground truth answer of \"6.\"",
+      "raw_judge_response": "INCORRECT: The generated answer does not provide any factual information regarding the number of seats in the engineer's compartment on the CRH3 and does not match the ground truth answer of \"6.\""
+    },
+    {
+      "id": 5,
+      "question": "What is the front of the CRH1 train like?",
+      "generated_answer": "The front of the CRH1 train, like many high-speed trains, is designed aerodynamically to reduce air resistance and improve speed. It typically features a sleek, pointed nose that allows for better airflow over the train's surface as it travels at high speeds. This design not only enhances performance but also contributes to safety by minimizing the impact of wind and reducing noise levels. The front section often includes large windows for visibility, and modern light fixtures that give it a distinctive look. Overall, the front of the CRH1 train emphasizes both function and style, reflecting its high-speed capabilities.",
+      "ground_truths": "The CRH1 has a distinctive, aerodynamic blunt-nose design in white with a prominent black panel displaying the \"CRH\" logo between two integrated headlights.",
+      "correct": false,
+      "explanation": "The generated answer describes the front of the CRH1 train as having an aerodynamic, sleek design, but it does not match any part of the ground truth answers, which describe a distinct black panel displaying the CRH logo. There is a lack of factual consistency regarding the specific features of the CRH1 train's front design.",
+      "raw_judge_response": "INCORRECT: The generated answer describes the front of the CRH1 train as having an aerodynamic, sleek design, but it does not match any part of the ground truth answers, which describe a distinct black panel displaying the CRH logo. There is a lack of factual consistency regarding the specific features of the CRH1 train's front design."
+    },
+    {
+      "id": 6,
+      "question": "What is the colour scheme of the interior of the MTR CRRC Changchun train (also known as TML C-Train)?",
+      "generated_answer": "I'm sorry, but I don't have specific information about the color scheme of the interior of the MTR CRRC Changchun train, also known as the TML C-Train. If you have any other questions or need information on a different topic, feel free to ask!",
+      "ground_truths": [
+        "White, yellow, red",
+        "White walls and doors, red seats, yellow handrails"
+      ],
+      "correct": false,
+      "explanation": "The generated answer does not provide any information about the color scheme of the interior of the MTR CRRC Changchun train, which is required to match the ground truth answers.",
+      "raw_judge_response": "INCORRECT: The generated answer does not provide any information about the color scheme of the interior of the MTR CRRC Changchun train, which is required to match the ground truth answers."
+    },
+    {
+      "id": 7,
+      "question": "Why is the MTR CRRC Changchun EMU (TML C-Train) compared to the SP1900, and what differences do these two trains have in terms of appearance and interior?",
+      "generated_answer": "The comparison between the MTR CRRC Changchun EMU (TML C-Train) and the SP1900 likely stems from their roles within the Hong Kong rail system and their operational capabilities. While both train models serve important functions in the regional transport network, they may differ in several areas.\n\nIn terms of appearance, the SP1900 trains are noted for a specific livery pattern that is associated with the East West Corridor, which contributes to their distinctive visual identity within the railway system. On the other hand, the TML C-Train, being part of the CRRC Changchun series, will likely have its own unique design features that reflect its brand and manufacturing specifications.\n\nWhen it comes to the interior, the SP1900 trains include Quiet Cars designated for enhanced passenger comfort, which suggests a focus on providing a more serene environment for travelers. It’s common for different train models to have varying seat configurations, interior materials, and amenities aimed at improving the passenger experience; the TML C-Train may have different design considerations and comfort features.\n\nOverall, the differences in appearance and interior between the two train models could reflect their operational roles, branding strategies, and catering to the preferences of their respective passenger demographics.",
+      "ground_truths": "The MTR CRRC Changchun EMU (TML C-Train) is nicknamed \"pseudo-SP1900\" due to similar exterior appearance to that of the SP1900. Notable differences include both cab ends, and a refreshed interior layout, featuring dynamic route map displays, 3-seater seats, and larger LCD TVs.",
+      "correct": false,
+      "explanation": "The generated answer does not address the reasons for the comparison between the MTR CRRC Changchun EMU (TML C-Train) and the SP1900, nor does it provide details about specific differences in appearance and interior. It lacks direct factual responses relevant to the question asked.",
+      "raw_judge_response": "INCORRECT: The generated answer does not address the reasons for the comparison between the MTR CRRC Changchun EMU (TML C-Train) and the SP1900, nor does it provide details about specific differences in appearance and interior. It lacks direct factual responses relevant to the question asked."
+    },
+    {
+      "id": 8,
+      "question": "Where were the MTR CRRC Changchun EMU (TML C-Train) trainsets built? When did the trainsets fully enter service?",
+      "generated_answer": "I'm sorry, but the information regarding the specific location where the MTR CRRC Changchun EMU (TML C-Train) trainsets were built and the exact date they fully entered service is not provided in the available context. If you have any other questions or need information on a different topic, feel free to ask!",
+      "ground_truths": "The MTR CRRC Changchun EMU (TML C-Train) trainsets were built in Changchun, Jilin, China between 2015 and 2018. These trains entered service on the Ma On Shan Line in March 2017 and the West Rail Line in March 2020.",
+      "correct": false,
+      "explanation": "The generated answer does not provide any factual information regarding where the trainsets were built or when they fully entered service, which contradicts the ground truth that specifies both the location and timeframe.",
+      "raw_judge_response": "INCORRECT: The generated answer does not provide any factual information regarding where the trainsets were built or when they fully entered service, which contradicts the ground truth that specifies both the location and timeframe."
+    },
+    {
+      "id": 9,
+      "question": "What quantitative differences do first-class carriages of the SP1900 train have as compared to other carriages?",
+      "generated_answer": "I'm sorry, but the information provided doesn't include specific quantitative details about the first-class carriages of the SP1900 train compared to other carriages. If you have more specific data or documents, I could help interpret them!",
+      "ground_truths": [
+        "First class carriages allow 72 seated and 144 standing, while standard carriages allow 52 seated and 286 standing.",
+        "First class carriages feature purple seats, while standard carriages feature red and silver seats.",
+        "First class compartments have two doors on the sides, while standard carriages have five doors.",
+        "First class carriages feature a yellow strip above the doors and windows on both sides."
+      ],
+      "correct": false,
+      "explanation": "The generated answer does not provide any specific quantitative differences or details about the first-class carriages of the SP1900 train compared to other carriages, which is necessary to match the ground truth answers.",
+      "raw_judge_response": "INCORRECT: The generated answer does not provide any specific quantitative differences or details about the first-class carriages of the SP1900 train compared to other carriages, which is necessary to match the ground truth answers."
+    },
+    {
+      "id": 10,
+      "question": "What major incidents have happened to SP1900 trains?",
+      "generated_answer": "The context provided does not specify any major incidents involving SP1900 trains. It mainly discusses their operational roles within the Hong Kong rail system, their maintenance at the Tai Wai Depot, and their design features. If you have a specific incident in mind or need information on related topics, let me know!",
+      "ground_truths": "On February 14, 2007, a southbound SP1900 train suffered a major failure inside the Tai Lam Tunnel when a roof-mounted transformer exploded due to internal manufacturing flaws and a power surge, causing a fire that cut all traction power and forced approximately 650 passengers to evacuate through the dark, 5.5-kilometer tunnel in an incident that left 11 people hospitalized.",
+      "correct": false,
+      "explanation": "The generated answer does not address any specific major incidents involving SP1900 trains, whereas the ground truth details an incident in February 2007 that involved a major failure during operation. The lack of acknowledgment of this incident makes the generated answer incorrect.",
+      "raw_judge_response": "INCORRECT: The generated answer does not address any specific major incidents involving SP1900 trains, whereas the ground truth details an incident in February 2007 that involved a major failure during operation. The lack of acknowledgment of this incident makes the generated answer incorrect."
+    }
+  ]
+}
