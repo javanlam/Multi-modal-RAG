@@ -1,6 +1,7 @@
 import json
 import ijson
 import os
+from pathlib import Path
 import base64
 from typing import List, Dict, Optional
 import hashlib
@@ -116,6 +117,9 @@ class ImageStore:
             # save image file
             image_filename = f"{image_id}.{ext}"
             image_path = os.path.join(self.images_dir, image_filename)
+
+            image_path_Path = Path(image_path)
+            image_path_Path.parent.mkdir(parents=True, exist_ok=True)
             
             with open(image_path, 'wb') as f:
                 f.write(image_bytes)

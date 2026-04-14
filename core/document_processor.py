@@ -238,7 +238,7 @@ class DocumentProcessor:
             
             metadata = {
                 "page_num": page_num + 1,
-                "img_index": None,   # set later if needed
+                "img_index": None,
                 "context": context,
                 "image_data_url": image_data_url,
                 "caption": caption_text,
