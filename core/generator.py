@@ -50,9 +50,10 @@ class ResponseGenerator:
     def generate_response(
             self, 
             query: str, 
-            context_documents: str, 
+            context_documents: List[str], 
             query_img: Optional[List[str]] = None,
-            context_images: Optional[List[str]] = None
+            context_images: Optional[List[str]] = None,
+            context_images_metadatas: Optional[List[Dict]] = None
         ) -> Dict[str, Any]:
         """
         Generates a response using context and query.
@@ -62,13 +63,14 @@ class ResponseGenerator:
         - context_documents (List[str]): a list of documents retrieved from external knowledge base, to act as context
         - query_img (Optional[List[str]]): a list of encoded image URLs in the user's query
         - context_images (Optional[List[str]]): a list of encoded image URLs for images retrieved from external knowledge base, to act as context
+        - context_images_metadatas (Optional[List[Dict]]): a list of metadatas of images retrieved from external knowledge base
 
         returns:
         - a dictionary containing the generated response and additional information
         """
         context = "\n\n".join([f"Document {i+1}: {doc}" for i, doc in enumerate(context_documents)])
         
-        prompt = self._build_prompt(query, context, query_img, context_images)
+        prompt = self._build_prompt(query, context, query_img, context_images, context_images_metadatas)
         system_prompt = "You are a helpful assistant that follows closely the following instructions provided by the user."
 
         images = None
@@ -92,7 +94,8 @@ class ResponseGenerator:
             query: str, 
             context: str, 
             query_img: Optional[List[str]] = None,
-            context_images: Optional[List[str]] = None
+            context_images: Optional[List[str]] = None,
+            context_images_metadatas: Optional[List[Dict]] = None
         ) -> str:
         """
         Builds a prompt for the LLM.
@@ -102,14 +105,21 @@ class ResponseGenerator:
         - context (str): retrieved information from the external database to be used as context
         - query_img (Optional[List[str]]): a list of encoded image URLs in the user's query
         - context_images (Optional[List[str]]): a list of encoded image URLs for images retrieved from external knowledge base, to act as context
+        - context_images_metadatas (Optional[List[Dict]]): a list of metadatas of images retrieved from external knowledge base
 
         returns:
         - a string containing the prompt to the LLM.
         """
+        context_image_captions = """"""
+
+        if context_images_metadatas:
+            context_image_captions = "\n".join(f"Context image {i}: {metadata['caption']}" for i, metadata in enumerate(context_images_metadatas))
+
         prompt = f"""You are a helpful assistant that answers questions based on retrieved context in possibly both text and visual form.
 
 {"" if not query_img else f"The user has provided an image in their query, and it is the first {len(query_img)} images among all images presented to you."}
-{"" if not context_images else f"The last {len(context_images)} presented to you are relevant visual context to assist you in answering the question."}   
+{"" if not context_images else f"{"The last" if query_img else "All"} {len(context_images)} presented to you are relevant visual context to assist you in answering the question."}   
+{"" if not context_images_metadatas else f"""The following is a list of captions for retrieved context images: {context_image_captions}"""}
 
 Based on the following context, please answer the question.
 

@@ -122,7 +122,7 @@ Hypothetical Document:
             "enhanced_query": enhanced_query if use_enhancement else query
         }
     
-    def retrieve_multimodal(self, query: str, query_images: Optional[List[str]]) -> List[str]:
+    def retrieve_multimodal(self, query: str, query_images: Optional[List[str]]) -> Tuple[List[str], List[Dict]]:
         """
         Retrieves relevant images.
 
@@ -131,10 +131,12 @@ Hypothetical Document:
         - query_images (Optional[List[str]]): list of data URLs of images included in the user's query
 
         returns:
-        - a list of image data URLs of retrieved images
+        - a tuple containing a list of image data URLs of retrieved images, and a list of retrieved image metadatas
         """
         retrieved_image_ids = []
         retrieved_image_data_urls = []
+
+        retrieved_metadatas = []
 
         try:
             # search by text
@@ -164,6 +166,10 @@ Hypothetical Document:
 
             # remove duplicates
             retrieved_image_ids = list(set(retrieved_image_ids))
+
+            # retrieve image metadatas
+            for id in retrieved_image_ids:
+                retrieved_metadatas.append(self.image_store.get_image(id))
             
             # retrieve image URLs from image store
             retrieved_image_data_urls = self.image_store.get_image_data_urls(retrieved_image_ids)
@@ -173,4 +179,4 @@ Hypothetical Document:
         except Exception as e:
             print(f"Multi-modal retrieval error: {e}")
 
-        return retrieved_image_data_urls
+        return retrieved_image_data_urls, retrieved_metadatas

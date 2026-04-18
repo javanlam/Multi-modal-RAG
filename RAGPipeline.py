@@ -240,8 +240,10 @@ class RAGSystem:
 
         context_images = []
 
+        retrieved_metadatas = []
+
         if self.config.use_multimodal and self.multimodal_embedding and self.multi_vector_store:
-            retrieved_image_data_urls = self.retriever.retrieve_multimodal(query=question, query_images=query_images)
+            retrieved_image_data_urls, retrieved_metadatas = self.retriever.retrieve_multimodal(query=question, query_images=query_images)
 
             if len(retrieved_image_data_urls) > 0:
                 retrieved_has_images = True
@@ -272,7 +274,8 @@ class RAGSystem:
                 question, 
                 context_documents=retrieval_result["documents"],
                 query_img=query_images,
-                context_images=context_images if context_images else None
+                context_images=context_images if context_images else None,
+                context_images_metadatas=retrieved_metadatas
             )
             generator_type = "vlm"
 
