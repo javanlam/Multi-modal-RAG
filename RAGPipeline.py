@@ -292,6 +292,7 @@ class RAGSystem:
             "retrieval_mode": self.config.retrieval_mode,
             "source_documents": retrieval_result["documents"],
             "context_images": context_images,
+            "retrieved_image_ids": [metadata.get("id") for metadata in retrieved_metadatas],
             "retrieval_metadata": {
                 "documents_retrieved": len(retrieval_result["documents"]),
                 "enhancement_used": use_enhancement,
