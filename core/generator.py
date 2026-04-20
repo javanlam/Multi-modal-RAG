@@ -130,6 +130,7 @@ Question: {query}
 
 Please provide a comprehensive answer.
 Always trust the context over your own knowledge.
+Also pay closer attention to the visual context provided to you, if any.
 If you find the context insufficient for answering the question, gently reject answering the question.
 
 You act as a chatbot and are having a conversation with the user.
@@ -138,52 +139,6 @@ Provide a natural response as in a conversation; do NOT mention anything about t
 Answer:"""
         
         return prompt
-
-    def generate_openai_response(self, prompt: str, query: str) -> Dict[str, Any]:
-        """
-        Generates a response using OpenAI API.
-        
-        args:
-        - prompt (str): prompt containing the user's query and retrieved context
-        - query (str): user query to generate a response to
-
-        returns:
-        - a dictionary containing the generated response and additional information
-        """
-        try:
-
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant that provides accurate information based on the given context."},
-                {"role": "user", "content": prompt}
-            ]
-
-            if self.llm_client is None:
-                response = openai.chat.completions.create(
-                    model=self.config.llm_model,
-                    messages=messages,
-                    temperature=self.config.temperature,
-                    max_tokens=1000
-                )
-
-            else:
-                response = self.llm_client.chat.completions.create(
-                    model=self.config.llm_model,
-                    messages=messages,
-                    temperature=self.config.temperature,
-                    max_tokens=1000
-                )
-            
-            return {
-                "answer": response.choices[0].message.content,
-                "usage": response.usage,
-                "model": self.config.llm_model
-            }
-            
-        except Exception as e:
-            return {
-                "answer": f"Error generating response: {str(e)}",
-                "error": True
-            } 
 
     def _generate_fallback_response(self, query: str, context: str) -> Dict[str, Any]:
         """
