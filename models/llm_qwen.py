@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 import dotenv
-from dashscope import MultiModalConversation
+import dashscope
 from typing import List, Dict, Any, Optional
 from config.settings import RAGConfig
 
@@ -24,6 +24,8 @@ class LLM_Qwen:
         self.model = self.config.llm_model
         self.temperature = self.config.temperature
 
+        self.api_key = None
+
         self._setup_llm()
 
     def _setup_llm(self) -> None:
@@ -33,11 +35,14 @@ class LLM_Qwen:
         dotenv_path = Path(__file__).parent.parent / ".env"
         dotenv.load_dotenv(dotenv_path=dotenv_path)
 
-        api_key = os.getenv("DASHSCOPE_API_KEY")
-        if not api_key:
+        dashscope.base_http_api_url = "https://dashscope-intl.aliyuncs.com/api/v1"
+
+        self.api_key = os.getenv("DASHSCOPE_API_KEY")
+        if not self.api_key:
             raise ValueError("DASHSCOPE_API_KEY not found in environment variables")
 
-        os.environ["DASHSCOPE_API_KEY"] = api_key
+        dashscope.api_key = self.api_key
+        os.environ["DASHSCOPE_API_KEY"] = self.api_key
 
     def _get_system_prompt(self) -> str:
         """
@@ -63,7 +68,7 @@ class LLM_Qwen:
         - a dictionary containing the generated response and additional information
         """
         if system_prompt is None:
-            system_prompt = self._get_system_prompt()
+            system_prompt = [{"text": self._get_system_prompt()}]
 
         try:
             content = [{"text": user_prompt}]
@@ -77,11 +82,11 @@ class LLM_Qwen:
                 {"role": "user", "content": content}
             ]
 
-            response = MultiModalConversation.call(
+            response = dashscope.MultiModalConversation.call(
+                api_key=self.api_key,
                 model=self.model,
                 messages=messages,
                 temperature=self.temperature,
-                max_tokens=getattr(self.config, "max_tokens", 1000)
             )
 
             if response.status_code == 200:
@@ -91,14 +96,13 @@ class LLM_Qwen:
                     "answer": answer,
                     "usage": {
                         "input_tokens": usage.input_tokens,
-                        "output_tokens": usage.output_tokens,
-                        "total_tokens": usage.total_tokens,
+                        "output_tokens": usage.output_tokens
                     },
                     "model": self.model
                 }
             else:
                 return {
-                    "answer": f"Error: {response.code} - {response.message}",
+                    "answer": f"Error: {response.status_code} - {response.message}",
                     "error": True
                 }
 
