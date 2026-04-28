@@ -96,7 +96,7 @@ class RAGConfig:
             embedding_model=os.getenv("EMBEDDING_MODEL", "all-MiniLM-L6-v2"),
             embedding_dimension=int(os.getenv("EMBEDDING_DIMENSION", "384")),
 
-            use_multimodal=os.getenv("USE_MULTIMODAL", "false").lower() == "true",
+            use_multimodal=os.getenv("USE_MULTIMODAL", "true").lower() == "true",
             dinov2_model_name=os.getenv("DINOV2_MODEL_NAME", "facebook/dinov2-small"),
             dinov2_embedding_dim=os.getenv("DINOV2_EMBEDDING_DIM", "768"),
             talk2dino_model_id=os.getenv("TALK2DINO_MODEL_ID", "lorebianchi98/Talk2DINO-ViTB"),
