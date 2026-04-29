@@ -32,6 +32,13 @@ class QueryResponse(BaseModel):
     graph_metadata: Optional[Dict[str, Any]] = None
 
 
+class QueryZeroShotRepsonse(BaseModel):
+    question: str
+    answer: str
+    usage: Dict[str, Any]
+    model: str
+
+
 class IngestResponse(BaseModel):
     message: str
     chunks_ingested: Optional[int] = None
@@ -48,7 +55,7 @@ async def lifespan(app: FastAPI):
     global rag_system
     global config
 
-    config = RAGConfig.from_env()
+    config = RAGConfig(llm_provider="qwen", llm_model="qwen-vl-plus", use_multimodal=True)
     rag_system = RAGSystem(config=config)
 
     print("RAGSystem initialised with configuration:")
@@ -218,6 +225,46 @@ async def query_rag(request: QueryRequest) -> QueryResponse:
         graph_metadata=serializable_result.get("graph_metadata")
     )
     
+    return response
+
+
+@app.post("/query/zeroshot", response_model=QueryZeroShotRepsonse)
+async def query_zeroshot(request: QueryRequest) -> QueryZeroShotRepsonse:
+    """
+    Generates a zero-shot response to a query and returns the generated answer.
+
+    args:
+    - request (QueryRequest): a query request containing the query text and images
+
+    returns:
+    - a QueryZeroShotRepsonse object containing the answer and response metadata
+    """
+    if rag_system is None:
+        raise HTTPException(status_code=503, detail="LLM not initialised")
+
+    import asyncio
+    loop = asyncio.get_running_loop()
+
+    try:
+        result: Dict = await loop.run_in_executor(
+            None,
+            rag_system.generator.llm.generate_response,
+            request.question,
+            None,
+            request.query_images,
+        )
+        serializable_result = make_json_serializable(result)
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Query failed: {str(e)}")
+
+    response = QueryZeroShotRepsonse(
+        question=request.question,
+        answer=serializable_result["answer"],
+        usage=serializable_result["usage"],
+        model=serializable_result["model"]
+    )
+
     return response
 
 

@@ -23,12 +23,24 @@ interface QueryResponse {
   };
 }
 
+interface ZeroShotResponse {
+  question: string;
+  answer: string;
+  usage: {
+    prompt_tokens: number;
+    completion_tokens: number;
+    total_tokens: number;
+  };
+  model: string;
+}
+
 function App() {
   const [question, setQuestion] = useState('');
   const [useEnhancement, setUseEnhancement] = useState(true);
   const [useVlm, setUseVlm] = useState(true);
   const [loading, setLoading] = useState(false);
-  const [response, setResponse] = useState<QueryResponse | null>(null);
+  const [ragResponse, setRagResponse] = useState<QueryResponse | null>(null);
+  const [zeroShotResponse, setZeroShotResponse] = useState<ZeroShotResponse | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,28 +49,45 @@ function App() {
 
     setLoading(true);
     setError(null);
-    setResponse(null);
+    setRagResponse(null);
+    setZeroShotResponse(null);
+
+    const trimmedQuestion = question.trim();
+    const requestBody = {
+      question: trimmedQuestion,
+      use_enhancement: useEnhancement,
+      use_vlm: useVlm,
+    };
 
     try {
-      const res = await fetch(`${API_BASE_URL}/query`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          question: question.trim(),
-          use_enhancement: useEnhancement,
-          use_vlm: useVlm,
+      const [ragRes, zeroShotRes] = await Promise.all([
+        fetch(`${API_BASE_URL}/query`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(requestBody),
         }),
-      });
+        fetch(`${API_BASE_URL}/query/zeroshot`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ question: trimmedQuestion }),
+        }),
+      ]);
 
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(`Server error (${res.status}): ${errorText}`);
+      if (!ragRes.ok) {
+        const errorText = await ragRes.text();
+        throw new Error(`Failed to get responses from the RAG system: (${ragRes.status}): ${errorText}`);
       }
+      const ragData: QueryResponse = await ragRes.json();
+      setRagResponse(ragData);
 
-      const data: QueryResponse = await res.json();
-      setResponse(data);
+      if (!zeroShotRes.ok) {
+        const errorText = await zeroShotRes.text();
+        throw new Error(`Failed to get responses from the LLM: (${zeroShotRes.status}): ${errorText}`);
+      }
+      const zeroShotData: ZeroShotResponse = await zeroShotRes.json();
+      setZeroShotResponse(zeroShotData);
     } catch (err: any) {
-      setError(err.message || 'Failed to get response from the RAG system.');
+      setError(err.message || 'Failed to get responses from the RAG system.');
     } finally {
       setLoading(false);
     }
@@ -86,7 +115,7 @@ function App() {
               checked={useEnhancement}
               onChange={(e) => setUseEnhancement(e.target.checked)}
             />
-            🧠 Use query enhancement
+            🧠 Use query enhancement (RAG only)
           </label>
           <label>
             <input
@@ -94,7 +123,7 @@ function App() {
               checked={useVlm}
               onChange={(e) => setUseVlm(e.target.checked)}
             />
-            🖼️ Use VLM (Vision Language Model) for image-rich answers
+            🖼️ Use VLM (RAG only)
           </label>
         </div>
 
@@ -108,64 +137,85 @@ function App() {
       {loading && (
         <div className="loading-spinner">
           <div className="spinner"></div>
-          <p>Retrieving and generating answer...</p>
+          <p>Retrieving and generating answers...</p>
         </div>
       )}
 
-      {response && (
-        <div className="results">
-          <section className="answer-section">
-            <h2>💡 Answer</h2>
+      {ragResponse && zeroShotResponse && (
+        <div className="answers-stack">
+          {/* Zero‑Shot answer (above) */}
+          <div className="answer-block zeroshot-block">
+            <h2>⚡ Zero-Shot Answer</h2>
             <div className="answer-content">
-              {formatAnswer(response.answer)}
+              {formatAnswer(zeroShotResponse.answer)}
             </div>
-            <div className="generator-info">
-              Generator: {response.generation_metadata.generator_type}
+            <div className="model-info">
+              Model: {zeroShotResponse.model}
             </div>
-            {response.retrieval_metadata.enhanced_query && (
-              <div className="enhanced-query">
-                ✨ Enhanced query: {response.retrieval_metadata.enhanced_query}
+            {zeroShotResponse.usage && (
+              <div className="usage-info">
+                Tokens: {zeroShotResponse.usage.total_tokens} total 
+                (prompt: {zeroShotResponse.usage.prompt_tokens}, 
+                 completion: {zeroShotResponse.usage.completion_tokens})
               </div>
             )}
-          </section>
+            <div className="disclaimer">
+              ℹ️ Zero‑shot answers are generated without any document context.
+            </div>
+          </div>
 
-          {response.context_images && response.context_images.length > 0 && (
-            <section className="images-section">
-              <h2>🖼️ Retrieved images ({response.context_images.length})</h2>
-              <div className="images-grid">
-                {response.context_images.map((url, idx) => (
-                  <div key={idx} className="image-card">
-                    <img src={url} alt={`Retrieved image ${idx + 1}`} />
+          {/* RAG‑augmented answer */}
+          <div className="answer-block rag-block">
+            <h2>🔍 RAG‑augmented Answer</h2>
+            <div className="answer-content">
+              {formatAnswer(ragResponse.answer)}
+            </div>
+            <div className="generator-info">
+              Generator: {ragResponse.generation_metadata.generator_type}
+            </div>
+            {ragResponse.retrieval_metadata.enhanced_query && (
+              <div className="enhanced-query">
+                ✨ Enhanced query: {ragResponse.retrieval_metadata.enhanced_query}
+              </div>
+            )}
+
+            {ragResponse.context_images && ragResponse.context_images.length > 0 && (
+              <div className="images-section">
+                <h3>🖼️ Retrieved images ({ragResponse.context_images.length})</h3>
+                <div className="images-grid">
+                  {ragResponse.context_images.map((url, idx) => (
+                    <div key={idx} className="image-card">
+                      <img src={url} alt={`Retrieved image ${idx + 1}`} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="sources-section">
+              <h3>📄 Source documents ({ragResponse.retrieval_metadata.documents_retrieved})</h3>
+              <div className="sources-list">
+                {ragResponse.source_documents.map((doc, idx) => (
+                  <div key={idx} className="source-card">
+                    <div className="source-text">{doc.text || 'No text content'}</div>
+                    {doc.metadata && (
+                      <div className="source-metadata">
+                        {doc.metadata.source_file && <span>📁 {doc.metadata.source_file}</span>}
+                        {doc.metadata.page_num && <span>📄 Page {doc.metadata.page_num}</span>}
+                        {doc.metadata.has_images && <span>🖼️ Contains images</span>}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
-            </section>
-          )}
-
-          <section className="sources-section">
-            <h2>📄 Source documents ({response.retrieval_metadata.documents_retrieved})</h2>
-            <div className="sources-list">
-              {response.source_documents.map((doc, idx) => (
-                <div key={idx} className="source-card">
-                  <div className="source-text">{doc.text || 'No text content'}</div>
-                  {doc.metadata && (
-                    <div className="source-metadata">
-                      {doc.metadata.source_file && <span>📁 {doc.metadata.source_file}</span>}
-                      {doc.metadata.page_num && <span>📄 Page {doc.metadata.page_num}</span>}
-                      {doc.metadata.has_images && <span>🖼️ Contains images</span>}
-                    </div>
-                  )}
-                </div>
-              ))}
             </div>
-          </section>
+          </div>
         </div>
       )}
     </div>
   );
 }
 
-// Simple markdown-like formatting for newlines and inline code
 function formatAnswer(text: string): JSX.Element {
   const withLineBreaks = text.split('\n').map((line, i) => (
     <span key={i}>

@@ -33,6 +33,7 @@ header h1,
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
   margin-bottom: 2rem;
+  width: 100%;
 }
 
 .query-form textarea {
@@ -205,4 +206,95 @@ button:disabled {
 
 .image-card {
   text-align: center;
+}
+
+.answers-stack {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.answer-block {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.answers-stack h2,
+.answer-block h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+  color: #0f172a;
+}
+
+.zeroshot-block {
+  border-top: 4px solid #10b981;
+}
+
+.rag-block {
+  border-top: 4px solid #3b82f6;
+}
+
+.comparison-container {
+  display: flex;
+  gap: 2rem;
+  margin-top: 2rem;
+}
+
+.column {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+}
+
+.rag-column {
+  border-top: 4px solid #3b82f6;
+}
+
+.zeroshot-column {
+  border-top: 4px solid #10b981;
+}
+
+.column h2 {
+  margin-top: 0;
+  margin-bottom: 1rem;
+  font-size: 1.4rem;
+}
+
+.column h3 {
+  font-size: 1.1rem;
+  margin: 1rem 0 0.5rem 0;
+}
+
+.model-info, .usage-info, .disclaimer {
+  font-size: 0.85rem;
+  color: #475569;
+  margin-top: 0.75rem;
+}
+
+.disclaimer {
+  font-style: italic;
+  background: #fef9c3;
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-top: 1rem;
+}
+
+.column .images-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+
+@media (max-width: 768px) {
+  .comparison-container {
+    flex-direction: column;
+  }
 }
