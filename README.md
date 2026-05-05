@@ -111,6 +111,9 @@ For all example notebooks inside ```example_notebooks/```, please copy them to t
   │   ├── models/               # embedding models, LLM/MLLM wrappers
   │   ├── utils/                # helper functions
   │   ├── example_notebooks/    # Python notebooks for examples, tests, and benchmarking
+  │   ├── app/                  # FastAPI app for demo purposes
+  │   ├── frontend/             # frontend page (in TypeScript) for demo purposes
+  │   ├── report_slides/        # thesis report and presentation slides with LaTeX source files
   └── └── README.md             # this file
 ```
 
