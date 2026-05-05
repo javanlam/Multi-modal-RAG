@@ -1,0 +1,45 @@
+\section{Retrieval and Generation Integration Tests}
+\label{appendix:integrationtests}
+
+We obtain a second corpus of another 4 documents retrieved from Wikipedia\footnote{The Wikipedia pages are linked as follows: \\
+\url{https://en.wikipedia.org/wiki/Fuxing_(train)} \\
+\url{https://en.wikipedia.org/wiki/Hexie_(train)} \\
+\url{https://en.wikipedia.org/wiki/MTR_CRRC_Changchun_EMU} \\
+\url{https://en.wikipedia.org/wiki/MTR_SP1900_EMU}
+}.
+From information on these pages, we handcraft a small dataset of 11 queries for testing end-to-end processing and generation,
+to verify that our pipeline works as expected.
+
+The 11 questions are as follows:
+\begin{enumerate}
+    \item What colors have been used on the livery of Fuxing trains?
+    \item What is the CR450 and what is special about it?
+    \item On which railway lines does the Fuxing train CR400 operate?
+    \item What colors are the Hexie trains in?
+    \item How many seats does the engineer's compartment on the CRH3 have?
+    \item What is the front of the CRH1 train like?
+    \item What is the colour scheme of the interior of the MTR CRRC Changchun train (also known as TML C-Train)?
+    \item Why is the MTR CRRC Changchun EMU (TML C-Train) compared to the SP1900, and what differences do these two trains have in terms of appearance and interior?
+    \item Where were the MTR CRRC Changchun EMU (TML C-Train) trainsets built? When did the trainsets fully enter service?
+    \item What quantitative differences do first-class carriages of the SP1900 train have as compared to other carriages?
+    \item What major incidents have happened to SP1900 trains?
+\end{enumerate}
+
+We perform zero-shot, text-only retrieval, and multimodal retrieval tests using this dataset, and experiment with different values of $k$ for top-$k$ retrieval.
+The results in answer accuracies are as follows, with tuples representing (dense retrieval, graph retrieval) scores.
+\begin{center}
+    \begin{tabular}{ccc}
+        \toprule
+        Value of $k$ & Text-only & Multimodal \\
+        \midrule
+        0 (Zero-shot) & 27.3 & -- \\
+        1 & 36.4, 9.1 & \textbf{45.5}, 18.2 \\
+        3 & 36.4, 18.2 & \textbf{45.5}, \textbf{45.5} \\
+        5 & \textbf{45.5}, 18.2 & 27.3, 27.3 \\
+        7 & 36.4, 9.1 & \textbf{54.6}, 9.1 \\
+        10 & 45.5, 18.2 & \textbf{54.6}, 36.4 \\
+        15 & \textbf{45.5}, 9.1 & 27.3, 18.2 \\
+        20 & \textbf{45.5}, 9.1 & 36.4, 9.1 \\
+        \bottomrule
+    \end{tabular}
+\end{center}

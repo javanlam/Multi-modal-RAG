@@ -1,0 +1,18 @@
+\section{Conclusion}
+
+In this project, we present a multimodal Retrieval-Augmented Generation (RAG) pipeline with a focus on visual elements
+through a dual-representation framework, where text and visual features are separated.
+We utilize state-of-the-art pretrained foundational models (DINOv2 and Talk2DINO) as the embedder and retriever,
+and achieve results on par with or slightly better compared to results presented in benchmark papers.
+Our preliminary testing shows that MLLM-based captioning reaches 97.8\% accuracy,
+and the DINOv2-Talk2DINO pipeline retrieves fine-grained matches, 
+supporting our hypothesis that separate retrieval for different modalities achieves enhanced retrieval performance 
+and improves grounding.
+
+However, our pipeline still faces limitations in preprocessing overhead, theoretical bounds of dense retrieval,
+and current MLLM deficits in visual perception.
+Despite these limitations, our pipeline offers a solid foundation for generation grounding with retrieved visual evidence 
+in high-stakes domains where generation accuracy is crucial.
+
+Future work will explore more efficient preprocessing, agentic retrieval, domain-specific fine-tuning of embedders and retrievers,
+and extending the pipeline to text-to-vision image generation tasks.

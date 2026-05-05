@@ -1,0 +1,124 @@
+\documentclass[12pt]{article}
+\usepackage[a4paper, left=2.5cm, right=2.5cm, top=2.5cm, bottom=2.5cm]{geometry}
+\usepackage{newtxtext}
+\usepackage{titlesec}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{graphicx}
+\usepackage{bm}
+\usepackage{textcomp}
+\usepackage{multicol}
+\usepackage{gensymb}
+\usepackage{tabularray}
+\usepackage{nccmath}
+\usepackage{enumitem}
+\usepackage{moresize}
+\usepackage{float}
+\usepackage[numbers]{natbib}
+\usepackage{setspace}
+\usepackage{caption}
+\usepackage[hidelinks]{hyperref}
+\usepackage{xurl}
+\usepackage{verbatim}
+\usepackage{fancyvrb}
+\usepackage{booktabs}
+\usepackage{ltablex}
+\usepackage[table]{xcolor}
+
+\renewcommand*\contentsname{Table of Contents}
+\setcounter{tocdepth}{2}
+
+\makeatletter
+\renewenvironment{abstract}{%
+    \if@twocolumn
+      \section*{\abstractname}%
+    \else
+      \begin{center}%
+        {\bfseries \Large\abstractname\vspace{\z@}}%
+      \end{center}%
+      \quotation
+    \fi}
+    {\if@twocolumn\else\endquotation\fi}
+\makeatother
+
+\begin{document}
+\pagestyle{empty}
+\VerbatimFootnotes
+
+\vspace*{\fill}
+\begin{center}
+    {\HUGE \textbf{DAN1}}
+\end{center}
+\vspace*{\fill}
+\clearpage
+
+\newpage
+% cover page
+\doublespacing
+\begin{center}
+    {\large FYT Final Report} \\
+    \vspace{2mm}
+    \textbf{\LARGE Multi-modal Retrieval-Augmented Generation (RAG):} \vspace{2mm}\\
+    \textbf{\LARGE Tackling Hallucination in Multimodal Question Answering}
+
+    \vspace{2\baselineskip}
+
+    by \\
+    LAM, Ching Yin \\
+    DAN1 \\
+
+    \vspace{2\baselineskip}
+    
+    Advised by \\
+    Prof. Dan XU \\
+
+    \vspace{5\baselineskip}
+
+    Submitted in partial fulfillment of the requirements for CPEG 4902 \\
+    in the \\
+    Department of Computer Science \& Engineering \\
+    The Hong Kong University of Science and Technology \\
+    2025-2026 \\
+    Date of submission: April 17, 2026
+\end{center}
+
+\newpage
+\begin{center}
+    \Large \textbf{Acknowledgements}
+\end{center}
+First and foremost, I am deeply grateful to my supervisor, Dr. Dan XU, for his consistent support and guidance throughout the project.
+His expertise in computer vision and multimodality shaped the direction of this work.
+I also thank the open-source community behind DINOv2 and Talk2DINO, whose publicly released models made this implementation possible.
+Finally, my deepest thanks go to my family and friends, for being my constant source of strength and encouragement throughout this journey.
+
+\newpage
+\include{0-abstract}
+
+\newpage
+\singlespacing
+\tableofcontents
+
+\newpage
+\pagestyle{plain}
+\doublespacing
+\include{1-intro}
+\include{2-methodology}
+\include{3-discussion}
+\include{4-conclusion}
+
+\newpage
+\singlespacing
+\bibliographystyle{IEEEtran}
+\bibliography{main}
+
+\appendix
+\newpage
+\doublespacing
+\include{a-prompts}
+\include{b-mathnotation}
+\include{c-integration-tests}
+\include{d-planning}
+\include{e-software}
+
+\end{document}

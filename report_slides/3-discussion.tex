@@ -1,0 +1,115 @@
+\section{Discussion}
+
+\subsection{Analysis of Findings}
+
+We analyze failure cases in integration tests and benchmarking for deeper insight into reasons for inaccurate answers.
+
+\paragraph{Document Comprehension}
+We find that document layout comprehension plays an important role in retrieval accuracy.
+Documents tested in benchmarks include real-world documents from a wide range of domains with various formats.
+For instance, presentation slides, academic papers with multi-column layouts, and informational leaflets or brochures
+that feature interleaved text in images occupying the entire page space.
+Our document processor extracts images and texts in reading order, hence possibly confusing multi-column document layouts for single-column layouts.
+While our pipeline is observed to successfully retrieve entire presentation slides to produce a correct answer,
+we also find that in some cases, retrieved raw text documents show content in the same line among multiple columns.
+Such noise may prevent correct generation of answers, causing failure cases.
+
+\paragraph{Knowledge Graph Storage}
+Our graph-based storage option extracts entities and relationships to form a knowledge graph.
+We then generate community summaries with an LLM for communities of entity nodes detected in the graph.
+Theoretically graph-based storage preserves long-form context more accurately;
+however in our tests we find that flattening source documents into summaries causes loss of specific details in source documents.
+This led to a gap between dense retrieval and graph community retrieval for augmenting generation.
+We hence default to using dense retrieval.
+
+\paragraph{Generation Accuracy}
+The level of generation accuracy increases from zero-shot to text-only retrieval, then to multimodal retrieval.
+Inline images may contain valuable fine-grained visual information useful in providing an answer to a query.
+By retrieving related images and passing them to the MLLM, we make full use of external timely knowledge to support generation grounding,
+increasing the accuracy of final answers.
+This is observed in our end-to-end tests, where the highest accuracy score obtained from multimodal retrieval is 54.6\%,
+and that of text-only retrieval only reaches 45.5\%.
+Zero-shot generation gives 27.3\% accuracy.
+Our findings verify our hypothesis that retrieving visual information helps in reducing hallucination and factual errors in answering queries.
+
+
+\subsection{Limitations}
+
+Despite our proposed pipeline's strengths, we identify three major limitations: 
+preprocessing efficiency, theoretical bounds of dense retrieval, and current MLLM visual perception capability issues.
+
+\paragraph{Preprocessing}
+The preprocessing step in our pipeline requires inline image extraction from documents and captioning.
+We adopt MLLM image captioning with source document context as this method gives the highest accuracy among all methods tested.
+While the accuracy is exceptional (reaching an average of 97.79\% on our small test corpus),
+we find that processing time reaches 3.89 seconds per image.
+This creates a large indexing overhead for real-world uses, especially corporate-grade document batches that may contain thousands or millions of images.
+Using proprietary closed-source MLLMs via API requests might incur further networking or connection delays,
+while running inference on open-source MLLMs in local environments would demand much computation power and hence more powerful hardware.
+
+Our proposed pipeline also does not support video processing.
+Similar work such as VideoRAG \cite{ren2025videoragretrievalaugmentedgenerationextreme} already demonstrate the possibility of 
+indexing long-form videos into a knowledge base (a knowledge graph in this specific implementation) and can be used for generation grounding.
+As videos are formed of continuous frames of images, it would be possible to adopt a similar approach to our pipeline in processing videos.
+
+\paragraph{Dense Retrieval Bounds}
+Our pipeline offers dense retrieval from a vector database or knowledge graph retrieval for the text-to-text retrieval step,
+yet dense retrieval in the DINOv2 vector space is the only method for text-to-image and image-to-image retrieval using the DINOv2 representation space.
+Although dense retrieval is extensively used in RAG applications \cite{lewis2021retrievalaugmentedgenerationknowledgeintensivenlp,tonmoy2024comprehensivesurveyhallucinationmitigation},
+recent research has revealed the theoretical limits of dense retrieval.
+\cite{weller2026theoreticallimitationsembeddingbasedretrieval} finds that dense retrieval faces theoretical limits of retrieval effectiveness
+with regards to the total number of documents $n$, the number of documents to retrieve $k$, and the dimensionality of dense vectors used in indexing documents.
+In corporate-level applications of our pipeline, where the number of documents and images can reach large numbers, theoretical limits of dense retrieval may be reached.
+This may cause retrieval to be meaningless and provide no help in answering a query.
+
+\paragraph{MLLM Perception}
+This project is based on the assumption that retrieved images provided to a MLLM will further ground generation to visual evidence,
+hence conditioning generation on an extra dimension of ground truth information will allow the rate of hallucination and factual errors to be reduced.
+Current MLLMs demonstrate expert-level performance on domain-specific knowledge-intensive questions;
+but also show deficits in basic visual perception without textual descriptions as a fallback \cite{chen2026babyvisionvisualreasoninglanguage}.
+The paper finds that leading MLLMs lack behind adult humans on beyond-language visual tasks by up to 44.4\% (best-performing MLLM 49.7\%; adult humans 94.1\%).
+This reflects a severe lack in MLLM visual perception capabilities when the item concerned cannot easily be translated or flattened into natural language.
+
+Our pipeline assumes that fine-grained visual features will assist in answering vision-specific questions that cannot be covered by retrieved text.
+However, this assumption is largely limited by MLLM visual perception capabilities.
+\vspace{2mm}
+
+\noindent
+These limitations motivate the future directions described below.
+
+
+\subsection{Future Work}
+
+\paragraph{Better Preprocessing Efficiency}
+Future work may explore more efficient methods for document preprocessing and inline image captioning to strike a better balance 
+between the time taken and captioning accuracy.
+Current implementation in our pipeline incurs a linear time complexity in the number of documents and images,
+as processing is performed sequentially to avoid exceeding rate limits in API call requests.
+Parallel processing and calls, for instance, may be an improvement over the current method.
+
+\paragraph{Foundational Models}
+We utilize DINOv2, a foundational vision model, and Talk2DINO, a model that maps text representations into the DINOv2 visual representation space.
+These models achieve state-of-the-art performance on various tasks and can be directly used in our pipeline.
+For vision-critical applications, the foundational models can be further fine-tuned using domain-specific datasets 
+to further raise the capabilties of these models, then plugged into our pipeline to be used in multimodal RAG with a MLLM.
+
+\paragraph{Retrieval}
+Further retrieval methods can be employed in further work to further increase retrieval effectiveness.
+For example, emerging methods with agentic RAG \cite{gao2026scalingcontextsurveymultimodal} allow dynamic retrieval during generation to access additional visual evidence,
+as opposed to the current standard one-off pre-generation retrieval in our pipeline, which may be limited in evidence retrieval for question answering.
+Rerankers to re-sort the top-$k$ retrieved items may ensure that the most relevant information is provided to the MLLM for grounding generation.
+Cross-modal rerankers could reorder the top-$k$ retrieved images from DINOv2 embeddings based on fine-grained visual similarity to the query,
+improving precision at the cost of slightly added latency.
+
+\paragraph{Perception Improvement}
+Due to the limits of visual perceptive abilities of existing MLLM frameworks, researchers have proposed that a 
+new representation space can be used for tokenizing and embedding text or image patches \cite{chen2026babyvisionvisualreasoninglanguage}.
+This may allow visual nuances to be better captured by newly developed models, such that generation can attend more to fine-grained visual elements,
+further increasing generation accuracy and reducing hallucination or factual errors.
+
+\paragraph{Application Scenarios}
+We apply our multimodal RAG on text-to-text and vision-to-text MLLMs only.
+In text-to-vision-enabled models, images and text can be used as queries for generating novel images \cite{NEURIPS2023_43a69d14}.
+Such tasks may make use of visual details and nuances in retrieved images to a much larger scale than text generation tasks.
+Future work may extend our pipeline and visual element-focused embedding and retrieval method to use with image generation models
+for better quality and more realistic generated images.

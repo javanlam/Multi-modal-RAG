@@ -1,0 +1,17 @@
+\begin{abstract}
+\normalsize
+Retrieval-Augmented Generation (RAG) has become the major method for grounding Large Language Model (LLM) outputs with external evidence,
+but existing text-only pipelines cannot accommodate multimodal information.
+Multimodal RAG systems are being developed for use with Multimodal LLMs (MLLMs), and can process texts and images.
+Current systems flatten visual features into text captions, or rely on CLIP-based embeddings that prioritize semantic alignment
+over fine-grained visual details, limiting RAG in applications that require visual precision.
+
+This project presents a multimodal RAG pipeline that preserves fine-grained visual features while enabling cross-modal alignment.
+We propose a dual-representation framework maintaining separate representation spaces, 
+using state-of-the-art pretrained foundational models for feature extraction and cross-modal alignment.
+Our contributions include:
+(i) a complete multimodal RAG pipeline that allows for text-only and text-image queries, with retrieved evidence covering both modalities;
+(ii) a method without fine-tuning requirements that leverages state-of-the-art foundational models to use in evidence retrieval;
+and (iii) empirical evaluation on the effect of different retrieval modes in grounding generation to retrieved evidence.
+We compare dense retrieval against graph-based retrieval and analyze how different retrieval modes affect grounding in MLLM generation.
+\end{abstract}

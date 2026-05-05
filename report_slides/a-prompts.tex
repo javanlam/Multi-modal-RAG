@@ -1,0 +1,203 @@
+\section{Prompt Templates}
+\label{appendix:prompts}
+
+For all LLM or MLLM calls, the fallback system prompt (if none specified) is as follows.
+\begin{verbatim}
+You are a helpful assistant that follows closely the following \
+  instructions provided by the user.
+\end{verbatim}
+
+In image captioning, we provide captioning instructions and guidelines, context from the source document,
+and the image itself to the MLLM.
+The image is not part of the textual prompt.
+\begin{verbatim}
+Based on the surrounding text context and the image content, \
+  provide a concise, descriptive caption for this image.
+
+Surrounding context:
+{context}
+
+Your task is to produce a caption for the image with context \
+  from the original source.
+Describe what you see in the image, and give a comprehensive \
+  caption that explains the image content as well as the context of the document.
+However, do not give information that is too excessive in \
+  the caption. 
+Remain factual in writing the caption.
+
+The caption should:
+1. Describe the visual content clearly
+2. Incorporate relevant information from the context
+3. Be concise (1-2 sentences)
+4. Start with "Image: "
+5. NOT express that you based it off the provided context
+
+Caption:
+\end{verbatim}
+
+When the knowledge graph option is chosen, we use an LLM to extract entities and relationships from a chunk of text.
+The entities and relationships form nodes and edges in the knowledge graph respectively.
+We instruct the LLM to extract entities and relationships from the provided chunk, 
+and output in the format of a JSON dictionary for easy handling and processing.
+\begin{verbatim}
+You are an intelligent document processor, and you will assist \
+  in storing document information efficiently.
+The information below is to be parsed into entities and \
+  relationships between them.
+
+# Provided Information
+{text}
+
+# Instructions
+Read the information and extract entities and relationships \
+  between them from the text.
+
+## Entities
+For entities you find in the text, provide its **name** and \
+  **a short description** of what it is.
+
+## Relationships
+For relationships between two entities you find in the text, \
+  provide the **source entity**, **target entity**,
+the **relationship** between them (relationship type), and \
+  their **a short description**.
+
+# Output Format
+Give your output in a JSON string similar to the following.
+Do **NOT** include any markdown backticks in your output.
+Remember that your output will be directly parsed into \
+  a Python object.
+
+## Example Output
+{{
+  "entities": [
+    {{"name": "Entity1", "description": "Description of \
+                                                entity1"}},
+    {{"name": "Entity2", "description": "Description of \
+                                                entity2"}}
+  ],
+  "relationships": [
+    {{
+      "source": "Entity1", 
+      "target": "Entity2", 
+      "relationship": "influences", 
+      "description": "How entity1 influences entity2"
+    }}
+  ]
+}}
+
+Response:
+\end{verbatim}
+
+Communities of nodes in the knowledge graph are detected using Louvain's algorithm.
+For each community, we generate a community summary using an LLM.
+We include instructions for summarizing and the community's information in the prompt.
+\begin{verbatim}
+You are a helpful assistant that will assist with \
+  data handling tasks.
+Previously some documents were processed, and entities \
+  and their relationships were extracted to form a \
+  knowledge graph.
+Some communities were found in the knowledge graph, \
+  and your help is needed in organizing these communities.
+
+Summarize the following community of related entities \
+  in about {self.config.community_summary_length} words.
+
+Main entities:
+{", ".join(f"{node["name"]}" for node in \
+                        community_info["nodes"])}
+
+Key relationships:
+{"; ".join(f"{relation["source"]} {relation["relationship"]} \
+   {relation["target"]}" for relation in \
+                          community_info["relationships"])}
+
+Provide a concise summary that captures the main themes 
+  and relationships within this community.
+\end{verbatim}
+
+We use the Hypothetical Document Embeddings (HyDE) technique for text-to-text retrieval.
+The hypothetical document is a zero-shot generated answer to the input query.
+While the zero-shot answer may be highly incorrect and hallucinated, 
+the generated text contains similar nuances and text patterns similar to retrieval targets that contain evidence to answer the question.
+This improves retrieval performance.
+We prompt an LLM with short and concise instructions, and the input query.
+\begin{verbatim}
+Based on the query, generate a detailed hypothetical \
+  answer document (approximately 200-300 words).
+
+Query: {query}
+
+Hypothetical Document:
+\end{verbatim}
+
+The prompt for final answer generation contains retrieved context and the user's query,
+as well as instructions on the style and formation of the answer.
+If there are query images, or images are retrieved to be used as context,
+the textual prompt to provide such instructions as well.
+\begin{verbatim}
+You are a helpful assistant that answers questions \
+  based on retrieved context in possibly both text and visual form.
+
+{"" if not query_img else f"The user has provided an \
+    image in their query, and it is the first \
+    {len(query_img)} images among all images \
+    presented to you."}
+{"" if not context_images else f"The last \
+    {len(context_images)} presented to you are \
+    relevant visual context to assist you in \
+    answering the question."}   
+
+Based on the following context, please answer \
+  the question.
+
+Context:
+{context}
+
+Question: {query}
+
+Please provide a comprehensive answer.
+Always trust the context over your own knowledge.
+If you find the context insufficient for answering \
+  the question, gently reject answering the question.
+
+You act as a chatbot and are having a conversation \
+  with the user.
+Provide a natural response as in a conversation; \
+  do NOT mention anything about the context in your answer.
+
+Answer:
+\end{verbatim}
+
+In testing and benchmarking, we utilize the LLM-as-judge technique \cite{gu2025surveyllmasajudge} to judge final answer correctness.
+The prompt to judge generated outputs is
+\begin{verbatim}
+You are an evaluation judge. Determine if the generated \
+  answer is correct given the ground truth answer(s).
+
+Question: {question}
+
+Generated Answer: {generated_ans}
+
+Ground Truth Answer(s): {ground_truths_str}
+
+The generated answer should be considered CORRECT if it:
+1. Contains the same factual information as any of the \
+    ground truth answers
+2. Is semantically equivalent (e.g., "December 1972" \
+    matches "14 December 1972 UTC")
+3. Minor formatting differences are acceptable \
+    (e.g., "James I" vs "James I.")
+
+The generated answer should be considered INCORRECT if:
+1. It contains wrong factual information
+2. It's too vague or ambiguous
+3. It contradicts the ground truth
+
+Respond with ONLY "CORRECT" or "INCORRECT" followed \
+  by a brief explanation.
+
+Format:
+CORRECT/INCORRECT: <brief explanation>
+\end{verbatim}
